@@ -1,6 +1,6 @@
 # 2D RTS Game
 
-A small-scale 2D Real-Time Strategy game inspired by classics like **C&C: Red Alert 2** and **Age of Empires IV**, developed using the **Ebitengine** framework in Go. This project serves as a learning experience for game development and a showcase of Go programming skills.
+A small-scale 2D Real-Time Strategy game inspired by classics like **C&C: Red Alert 2** and **Age of Empires**, developed using the **Ebitengine** framework in Go. This project serves as a learning experience for game development and a showcase of Go programming skills.
 
 ---
 
