@@ -103,7 +103,7 @@ func main() {
 		},
 	}
 	ebiten.SetWindowSize(640, 480)
-	ebiten.SetWindowTitle("2D RTS Game")
+	ebiten.SetWindowTitle("Mubi")
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}
