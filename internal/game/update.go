@@ -2,7 +2,7 @@
 package game
 
 import (
-	"image" // <-- HINZUFÜGEN
+	"image" //
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -16,7 +16,7 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 			unit.attackTimer -= dt
 		}
 
-		// --- NEUE HELFER-FUNKTION ---
+		// ---  ---
 		// Checks if a unit *would* collide at a future position
 		isCollidingAt := func(u *Unit, nextX, nextY float64) bool {
 			// Create the "next step" bounding box
@@ -42,7 +42,7 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 
 			return false
 		}
-		// --- ENDE HELFER-FUNKTION ---
+		// --- E
 
 		switch unit.state {
 
