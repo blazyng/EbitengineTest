@@ -339,8 +339,7 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 
 			if dist <= unit.attackRange {
 				// 1. In range: Stop moving and attack
-				unit.x = unit.x // Stop moving
-				unit.y = unit.y
+				// Stop moving
 
 				if unit.attackTimer <= 0 {
 					// Attack is ready
