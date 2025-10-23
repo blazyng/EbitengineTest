@@ -1,8 +1,12 @@
+// updateUnits runs the state machine for every unit
 package game
 
-import "github.com/hajimehoshi/ebiten/v2"
+import (
+	"image" // <-- HINZUFÜGEN
 
-// updateUnits runs the state machine for every unit
+	"github.com/hajimehoshi/ebiten/v2"
+)
+
 func (g *Game) updateUnits(units, enemies []*Unit) {
 	dt := 1.0 / float64(ebiten.TPS())
 
@@ -12,19 +16,60 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 			unit.attackTimer -= dt
 		}
 
+		// --- NEUE HELFER-FUNKTION ---
+		// Checks if a unit *would* collide at a future position
+		isCollidingAt := func(u *Unit, nextX, nextY float64) bool {
+			// Create the "next step" bounding box
+			nextBox := image.Rect(int(nextX), int(nextY), int(nextX+unitSize), int(nextY+unitSize))
+
+			// 1. Check against barracks
+			if nextBox.Overlaps(g.barracks.BoundingBox()) {
+				return true
+			}
+
+			// 2. Check against resource nodes
+			for _, node := range g.resourceNodes {
+				// IMPORTANT: Don't check for collision with our *own target*!
+				if u.targetNode == node {
+					continue
+				}
+				if nextBox.Overlaps(node.BoundingBox()) {
+					return true
+				}
+			}
+
+			// 3. TODO: Check against other units (complex, skip for now)
+
+			return false
+		}
+		// --- ENDE HELFER-FUNKTION ---
+
 		switch unit.state {
 
 		case StateIdle:
 			// Do nothing
 
 		case StateMoving:
-			// This is your original movement logic
 			dist := distance(unit.x, unit.y, unit.targetX, unit.targetY)
-			if dist > unit.speed {
+			touchingDistance := 5.0 // How close to get before stopping
+
+			if dist > touchingDistance { // Check if we are "close enough"
+				// Calculate next step
 				dx := unit.targetX - unit.x
 				dy := unit.targetY - unit.y
-				unit.x += (dx / dist) * unit.speed
-				unit.y += (dy / dist) * unit.speed
+				nextX := unit.x + (dx/dist)*unit.speed
+				nextY := unit.y + (dy/dist)*unit.speed
+
+				// --- NEW: Collision Check ---
+				if !isCollidingAt(unit, nextX, nextY) {
+					unit.x = nextX
+					unit.y = nextY
+				} else {
+					// Stop if we hit something
+					unit.state = StateIdle
+				}
+				// --- END: Collision Check ---
+
 			} else {
 				unit.x = unit.targetX
 				unit.y = unit.targetY
@@ -32,17 +77,27 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 			}
 
 		case StateMovingToHarvest:
-			// Move towards the target resource node
 			dist := distance(unit.x, unit.y, unit.targetNode.x, unit.targetNode.y)
-			if dist > unit.speed {
+			touchingDistance := 10.0 // Stop a bit further away to "work"
+
+			if dist > touchingDistance {
+				// Calculate next step
 				dx := unit.targetNode.x - unit.x
 				dy := unit.targetNode.y - unit.y
-				unit.x += (dx / dist) * unit.speed
-				unit.y += (dy / dist) * unit.speed
+				nextX := unit.x + (dx/dist)*unit.speed
+				nextY := unit.y + (dy/dist)*unit.speed
+
+				// --- NEW: Collision Check ---
+				if !isCollidingAt(unit, nextX, nextY) {
+					unit.x = nextX
+					unit.y = nextY
+				} else {
+					// Stop if we hit something on the way
+					unit.state = StateIdle
+				}
+				// --- END: Collision Check ---
 			} else {
 				// Arrived at the node
-				unit.x = unit.targetNode.x
-				unit.y = unit.targetNode.y
 				unit.state = StateHarvesting
 				unit.harvestTimer = unitHarvestTime // Start the harvest timer
 			}
@@ -81,59 +136,70 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 			}
 
 		case StateReturning:
-			// Move towards the base
 			dist := distance(unit.x, unit.y, unit.targetX, unit.targetY)
-			if dist > unit.speed {
+			baseTouchingDistance := 10.0
+
+			if dist > baseTouchingDistance {
+				// Calculate next step
 				dx := unit.targetX - unit.x
 				dy := unit.targetY - unit.y
-				unit.x += (dx / dist) * unit.speed
-				unit.y += (dy / dist) * unit.speed
+				nextX := unit.x + (dx/dist)*unit.speed
+				nextY := unit.y + (dy/dist)*unit.speed
+
+				// --- NEW: Collision Check ---
+				if !isCollidingAt(unit, nextX, nextY) {
+					unit.x = nextX
+					unit.y = nextY
+				} else {
+					// Stop if we hit something
+					unit.state = StateIdle
+				}
+				// --- END: Collision Check ---
 			} else {
 				// Arrived at base
 				unit.x = unit.targetX
 				unit.y = unit.targetY
-
-				// Drop off resources
 				g.playerResources += unit.cargo
 				unit.cargo = 0
-
-				// Check if we should go back to harvesting
 				if unit.targetNode != nil && unit.targetNode.amount > 0 {
 					unit.state = StateMovingToHarvest
 					unit.targetX = unit.targetNode.x
 					unit.targetY = unit.targetNode.y
 				} else {
-					unit.state = StateIdle // Nothing to do
+					unit.state = StateIdle
 				}
 			}
+
 		case StateAttacking:
 			if unit.targetEnemy == nil || unit.targetEnemy.health <= 0 {
-				// Target is dead or gone
 				unit.state = StateIdle
 				unit.targetEnemy = nil
 				continue
 			}
 
-			// Calculate distance to target
 			dist := distance(unit.x, unit.y, unit.targetEnemy.x, unit.targetEnemy.y)
 
 			if dist <= unit.attackRange {
-				// 1. In range: Stop moving and attack
-				// Stop moving
-
+				// 1. In range: Attack (no change)
 				if unit.attackTimer <= 0 {
-					// Attack is ready
 					unit.targetEnemy.health -= unit.attackDamage
-					unit.attackTimer = 1.0 / unit.attackSpeed // Reset cooldown
+					unit.attackTimer = 1.0 / unit.attackSpeed
 				}
 			} else {
 				// 2. Out of range: Chase the target
+				// Calculate next step
 				dx := unit.targetEnemy.x - unit.x
 				dy := unit.targetEnemy.y - unit.y
-				unit.x += (dx / dist) * unit.speed
-				unit.y += (dy / dist) * unit.speed
-			}
+				nextX := unit.x + (dx/dist)*unit.speed
+				nextY := unit.y + (dy/dist)*unit.speed
 
+				// --- NEW: Collision Check ---
+				if !isCollidingAt(unit, nextX, nextY) {
+					unit.x = nextX
+					unit.y = nextY
+				} else {
+				}
+			}
 		}
 	}
 }

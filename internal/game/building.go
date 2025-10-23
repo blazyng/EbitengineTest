@@ -2,6 +2,7 @@
 package game
 
 import (
+	"image"
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -44,4 +45,9 @@ func (b *Building) Draw(screen *ebiten.Image) {
 		barColor := color.RGBA{R: 0, G: 255, B: 0, A: 255}
 		vector.DrawFilledRect(screen, float32(b.x), float32(b.y+b.height+5), barWidth, 5, barColor, false)
 	}
+}
+
+// BoundingBox returns the building's collision rectangle
+func (b *Building) BoundingBox() image.Rectangle {
+	return image.Rect(int(b.x), int(b.y), int(b.x+b.width), int(b.y+b.height))
 }

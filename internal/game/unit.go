@@ -1,6 +1,8 @@
 // internal/game/unit.go
 package game
 
+import "image"
+
 // UnitState defines what the unit is currently doing
 type UnitState int
 
@@ -61,4 +63,9 @@ func NewUnit(x, y float64, team int) *Unit {
 		attackSpeed:  1.0,  // 1 attack per second
 		attackTimer:  0.0,
 	}
+}
+
+// BoundingBox returns the unit's collision rectangle
+func (u *Unit) BoundingBox() image.Rectangle {
+	return image.Rect(int(u.x), int(u.y), int(u.x+unitSize), int(u.y+unitSize))
 }

@@ -2,6 +2,7 @@
 package game
 
 import (
+	"image"
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -32,4 +33,9 @@ func (r *ResourceNode) Draw(screen *ebiten.Image) {
 	// A simple yellow square for "gold"
 	fillColor := color.RGBA{R: 255, G: 255, B: 0, A: 255}
 	vector.DrawFilledRect(screen, float32(r.x), float32(r.y), float32(r.width), float32(r.height), fillColor, false)
+}
+
+// BoundingBox returns the resource's collision rectangle
+func (r *ResourceNode) BoundingBox() image.Rectangle {
+	return image.Rect(int(r.x), int(r.y), int(r.x+r.width), int(r.y+r.height))
 }
