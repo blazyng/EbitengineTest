@@ -16,6 +16,7 @@ This document describes the playable factions, their technological themes, and t
     * `Mustang Scout`: Light vehicle. Good against infantry.
     * `Patriot Tank`: Medium main battle tank.
     * `Aegis Laser Tank`: Heavy tech tank. Its laser can shoot down enemy rockets.
+    * `"Liberty" MLRS`: Long-range rocket artillery. Fires a salvo of small rockets, effective against infantry and light vehicles. Must deploy to fire.
     * `AAV Transporter`: Amphibious troop transport.
 * **Aircraft:**
     * `Ares Gunship`: Attack helicopter.
@@ -36,6 +37,7 @@ This document describes the playable factions, their technological themes, and t
     * `Fennek`: Light scout vehicle (cloaks when stationary).
     * `Leopard 3`: Medium main battle tank.
     * `"Odin" Railgun Tank`: Heavy tech tank. Fires a shot that penetrates multiple units in a line.
+    * `"Thunder" Sonic Howitzer`: Fires a single, slow sonic shell in a high arc. Deals AoE damage and disorients/slows units.
     * `Puma (IFV)`: Troop transport (Infantry can fire from inside).
 * **Aircraft:**
     * `Tiger`: Attack helicopter.
@@ -50,12 +52,13 @@ This document describes the playable factions, their technological themes, and t
 * **Infantry:**
     * `Conscript`: (Assault Rifle) Recruited in two-man squads.
     * `Tank Buster`: (Bazooka) Standard anti-tank.
-    * `Hacker "Red Hand"`: (Assassin) Cloaked. Can disable enemy buildings or steal money (the Black Lotus role).
+    * `Hacker "Red Hand"`: (Assassin) Cloaked. Can disable enemy buildings or steal money.
     * `General "Firestorm"`: **(Special Unit / Hero)** Not cloaked. Heavily armored infantry with a heavy napalm thrower. Has a propaganda aura that heals allies.
 * **Vehicles:**
     * `Gatling Track`: Light vehicle (anti-infantry/air).
-    * `Type-99 "Inferno"`: Medium main battle tank (formerly Battlemaster).
-    * `Emperor Tank`: Heavy tech tank (formerly Overlord). Huge, slow, extremely powerful.
+    * `Type-99 "Inferno"`: Medium main battle tank.
+    * `Emperor Tank`: Heavy tech tank. Huge, slow, extremely powerful.
+    * `"Dragon's Breath" Artillery`: Mobile artillery. Shoots napalm shells that leave a large patch of fire (damage over time).
     * `Dragon Transporter`: Troop transport with firing ports.
 * **Aircraft:**
     * `Inferno Copter`: Helicopter that shoots napalm.
@@ -75,7 +78,7 @@ This document describes the playable factions, their technological themes, and t
 * **Vehicles:**
     * `Salvage Collector`: Light vehicle. Collects scrap for upgrades.
     * `Scorpion Rocket Buggy`: Medium "tank."
-    * `Chem Launcher`: Heavy tech. Fires toxin or high-explosive rockets (formerly Scud).
+    * `Chem Launcher`: Heavy tech / Artillery. Fires toxin or high-explosive rockets.
     * `Acid Sprayer`: Replaces APC. Sprays a cloud of toxin.
 * **Aircraft:**
     * *(GBA has no "real" air force)*
@@ -88,14 +91,15 @@ This document describes the playable factions, their technological themes, and t
 
 * **Builder:** `Constructor Drone` (Hovers)
 * **Infantry:**
-    * `Psi Warrior`: (Assault Rifle) Plasma infantry (formerly Sectoid).
+    * `Psi Warrior`: (Assault Rifle) Plasma infantry.
     * `Matter Thrower`: (Bazooka) Fires a slow but strong "Dark Matter" orb.
     * `Life Sucker`: (Healer/Assassin) Drains life from enemies to heal allies.
     * `The "Harbinger"`: **(Special Unit / Hero)** Permanently cloaked. High-damage melee attack. Ability: "Blink" (short-range teleport).
 * **Vehicles:**
     * `Hover Platform`: Light vehicle.
     * `Focus Beam Tank`: Medium tank (beam gets stronger over time).
-    * `Annihilator Strider`: Heavy tech tank (formerly Tripod). Walks on three legs, fires devastating beams.
+    * `Annihilator Strider`: Heavy tech tank. Walks on three legs, fires devastating beams.
+    * `Plasma Bombardier`: Slow, organic siege unit. Lobs corrosive plasma sacks that leave a "dark matter" puddle, slowing and damaging units.
     * `Transporter Ship`: Flying troop transport.
 * **Aircraft:**
     * `Hunter Drone`: (Heli role) Small, fast drone.
@@ -110,12 +114,13 @@ This document describes the playable factions, their technological themes, and t
 * **Infantry:**
     * `Catgirl Soldier`: (Assault Rifle) Yells "Nya!" when firing.
     * `"Baka" Rocket Launcher`: (Bazooka) Fires absurd, colorful rockets.
-    * `Racing Girl Fighter`: (Assassin) Extremely fast melee unit (formerly Umamusume), dodges shots.
+    * `Racing Girl Fighter`: (Assassin) Extremely fast melee unit, dodges shots.
     * `"Maho Shojo"`: **(Special Unit / Hero)** Not cloaked. Ability 1: "Stardust Attack" (high single-target damage). Ability 2: "Power of Friendship" (Heals all units in an area).
 * **Vehicles:**
     * `"Isekai" Truck`: Light vehicle. Ability: Runs over infantry, which then "gets teleported to another world" (Insta-Kill).
     * `Light Mech "Type-M"`: Medium "tank." All-rounder mech.
-    * `Titan Mech "Astraea"`: Heavy tech tank (formerly Gundam-Mech). Can fly briefly, has an energy sword for melee.
+    * `Titan Mech "Astraea"`: Heavy tech tank. Can fly briefly, has an energy sword for melee.
+    * `"Rainbow Cannon"`: Absurdly colorful mortar. Fires an extremely slow, high-arc, glittering shot. Deals magic AoE damage and "Confuses" enemies.
     * `Cat Bus`: Troop transport.
 * **Aircraft:**
     * `Tentacle Being`: (Heli role) Organic, grabs infantry.
@@ -131,11 +136,11 @@ This document describes the playable factions, their technological themes, and t
     * `Pilgrim`: (Assault Rifle) Armed with a "blessed" crossbow.
     * `Fanatic`: (Bazooka) Throws "Holy Water" Molotovs (holy fire).
     * `Preacher`: (Healer) Heals allies.
-    * `The "Saint"`: **(Special Unit / Hero)** Cloaked. Ability 1: "Shield of Faith" (makes an allied unit invincible for 5 sec). Ability 2: "Excommunication" (instantly kills one enemy infantry unit).
+    * `The "Saint"`: **(Special Unit /Hero)** Cloaked. Ability 1: "Shield of Faith" (makes an allied unit invincible for 5 sec). Ability 2: "Excommunication" (instantly kills one enemy infantry unit).
 * **Vehicles:**
     * `Relic-Mobile`: Light vehicle. A van with loudspeakers (aura that slows/debuffs enemies).
     * `Crusader Tank`: Medium tank.
-    * `"Wrath of God" Artillery`: Heavy tech unit. Fires the **Holy Hand Grenade** (small radius, immense damage).
+    * `"Wrath of God" Artillery`: Heavy tech / Artillery. Fires the **Holy Hand Grenade** (small radius, immense damage).
     * `Pilgrim Bus`: Troop transport.
 * **Aircraft:**
     * `"Cherubim" Drone`: (Heli role) Fires small "light" bolts.
