@@ -14,11 +14,13 @@ import (
 )
 
 // Game struct holds all game state
+// Game struct holds all game state
 type Game struct {
 	units           []*Unit
-	resourceNodes   []*ResourceNode // New: List of all nodes
-	playerResources int             // New: Player's "money"
-	basePosition    image.Point     // New: The drop-off point
+	resourceNodes   []*ResourceNode
+	barracks        *Building // New: Our one and only barracks
+	playerResources int
+	basePosition    image.Point
 
 	// Selection fields
 	isDragging bool
@@ -26,13 +28,18 @@ type Game struct {
 	dragStartY int
 }
 
+// --- Constants ---
+const (
+	unitCost      = 50  // Cost for a new unit
+	unitBuildTime = 5.0 // 5 seconds to build a unit
+)
+
 // NewGame initializes the game
 func NewGame() (*Game, error) {
 	g := &Game{
-		basePosition:    image.Point{X: 10, Y: 10}, // Our "Town Hall" is at 10,10
-		playerResources: 0,
+		basePosition:    image.Point{X: 10, Y: 10},
+		playerResources: 100, // Start with 100 to test building
 	}
-
 	// Add starting units
 	g.units = []*Unit{
 		{x: 50, y: 50, targetX: 50, targetY: 50, speed: 2.0, state: StateIdle},
@@ -44,6 +51,9 @@ func NewGame() (*Game, error) {
 		NewResourceNode(200, 200, 1000), // A "gold mine" with 1000 resources
 	}
 
+	// New: Add a barracks
+	g.barracks = NewBuilding(10, 100) // Place it at (10, 100)
+
 	return g, nil
 }
 
@@ -52,17 +62,58 @@ func distance(x1, y1, x2, y2 float64) float64 {
 	return math.Sqrt(math.Pow(x2-x1, 2) + math.Pow(y2-y1, 2))
 }
 
-// Update handles all game logic
 func (g *Game) Update() error {
 	mouseX, mouseY := ebiten.CursorPosition()
 
 	// --- 1. Handle Input ---
 	g.handleInput(mouseX, mouseY)
 
-	// --- 2. Update Game State (Units) ---
+	// New: Handle production input
+	g.handleProductionInput() // We'll create this function
+
+	// --- 2. Update Game State ---
 	g.updateUnits()
+	g.updateBuildings() // We'll create this function
 
 	return nil
+}
+
+// New function to handle building units
+func (g *Game) handleProductionInput() {
+	// If we press 'U' and have enough resources and are not already building
+	if inpututil.IsKeyJustPressed(ebiten.KeyU) {
+		if g.playerResources >= unitCost && !g.barracks.isBuilding {
+			// Start building
+			g.playerResources -= unitCost
+			g.barracks.isBuilding = true
+			g.barracks.buildProgress = 0.0
+		}
+	}
+}
+
+// New function to update building logic
+func (g *Game) updateBuildings() {
+	if g.barracks.isBuilding {
+		dt := 1.0 / float64(ebiten.TPS())
+		g.barracks.buildProgress += dt / unitBuildTime // dt / 5.0 seconds
+
+		if g.barracks.buildProgress >= 1.0 {
+			// Finished building!
+			g.barracks.isBuilding = false
+			g.barracks.buildProgress = 0.0
+
+			// Create a new unit at the rally point
+			newUnit := &Unit{
+				x:       g.barracks.rallyPointX,
+				y:       g.barracks.rallyPointY,
+				targetX: g.barracks.rallyPointX,
+				targetY: g.barracks.rallyPointY,
+				speed:   2.0,
+				state:   StateIdle,
+			}
+			g.units = append(g.units, newUnit)
+		}
+	}
 }
 
 // handleInput processes user mouse clicks
@@ -295,6 +346,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// Draw resource counter
 	resText := fmt.Sprintf("Resources: %d", g.playerResources)
 	ebitenutil.DebugPrint(screen, resText)
+
+	// New: Add a build instruction hint
+	hintText := "Press [U] to build Unit (50)"
+	ebitenutil.DebugPrintAt(screen, hintText, 0, 10) // Draw below resource count
 }
 
 // Layout is Ebitengine's layout function
