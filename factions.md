@@ -7,6 +7,7 @@ This document describes the playable factions, their technological themes, and t
 **Theme / Tech:** Lasers, Drones & Air Superiority. (Projectiles are blue laser beams; vehicles are clean and modern).
 
 * **Builder:** `M.U.L.E. Drone`
+* **Harvester:** `Supply Drone` (Gathers resources from supply depots).
 * **Infantry:**
     * `Marines`: (Assault Rifle) Standard infantry.
     * `Javelin Soldier`: (Bazooka) Standard anti-tank.
@@ -16,7 +17,7 @@ This document describes the playable factions, their technological themes, and t
     * `Mustang Scout`: Light vehicle. Good against infantry.
     * `Patriot Tank`: Medium main battle tank.
     * `Aegis Laser Tank`: Heavy tech tank. Its laser can shoot down enemy rockets.
-    * `"Liberty" MLRS`: Long-range rocket artillery. Fires a salvo of small rockets, effective against infantry and light vehicles. Must deploy to fire.
+    * `"Liberty" MLRS`: Long-range rocket artillery. Fires a salvo of small rockets. Must deploy to fire.
     * `AAV Transporter`: Amphibious troop transport.
 * **Aircraft:**
     * `Ares Gunship`: Attack helicopter.
@@ -28,6 +29,7 @@ This document describes the playable factions, their technological themes, and t
 **Theme / Tech:** EMP, Sonic Tech & Advanced Ballistics. (Projectiles are "kinetic"—visible bullets, railgun streaks, blue EMP rings).
 
 * **Builder:** `Construction Pioneer`
+* **Harvester:** `Resource Transporter` (Standard C&C-style harvester truck).
 * **Infantry:**
     * `Grenadier`: (Assault Rifle) Standard infantry.
     * `Tank Hunter`: (Bazooka) Fires "smart" homing missiles.
@@ -49,6 +51,7 @@ This document describes the playable factions, their technological themes, and t
 **Theme / Tech:** Napalm, Propaganda & Mass Infantry. (Projectiles are fire, red tracers. Buildings are blocky, red/grey).
 
 * **Builder:** `Construction Dozer`
+* **Harvester:** `Supply Truck` (Large, slow-moving dump truck).
 * **Infantry:**
     * `Conscript`: (Assault Rifle) Recruited in two-man squads.
     * `Tank Buster`: (Bazooka) Standard anti-tank.
@@ -70,13 +73,14 @@ This document describes the playable factions, their technological themes, and t
 **Theme / Tech:** Toxins, Explosives & Salvage Upgrades. (Projectiles are green toxin splashes. Units look makeshift).
 
 * **Builder:** `Worker`
+* **Harvester:** `Scavenger` (A technical/pickup truck that gathers supplies. Gathers salvage from wrecks).
 * **Infantry:**
     * `Rebel`: (Assault Rifle) Cheap but inaccurate.
     * `RPG Soldier`: (Bazooka) Standard anti-tank.
     * `Martyr`: (Assassin) Kamikaze unit.
     * `Toxin Assassin`: **(Special Unit / Hero)** Permanently cloaked. Sniper rifle (kills vehicle crews). Ability: Can lay "Toxin Traps."
 * **Vehicles:**
-    * `Salvage Collector`: Light vehicle. Collects scrap for upgrades.
+    * `Salvage Collector`: Light vehicle. Collects scrap for upgrades. (Note: This is separate from the Harvester).
     * `Scorpion Rocket Buggy`: Medium "tank."
     * `Chem Launcher`: Heavy tech / Artillery. Fires toxin or high-explosive rockets.
     * `Acid Sprayer`: Replaces APC. Sprays a cloud of toxin.
@@ -90,6 +94,7 @@ This document describes the playable factions, their technological themes, and t
 **Theme / Tech:** Dark Matter, Psionics & Shields. (Projectiles are purple/black energy. Units and buildings are organic/curvy).
 
 * **Builder:** `Constructor Drone` (Hovers)
+* **Harvester:** `Gatherer Drone` (Hovers to the resource field and beams it up).
 * **Infantry:**
     * `Psi Warrior`: (Assault Rifle) Plasma infantry.
     * `Matter Thrower`: (Bazooka) Fires a slow but strong "Dark Matter" orb.
@@ -99,31 +104,32 @@ This document describes the playable factions, their technological themes, and t
     * `Hover Platform`: Light vehicle.
     * `Focus Beam Tank`: Medium tank (beam gets stronger over time).
     * `Annihilator Strider`: Heavy tech tank. Walks on three legs, fires devastating beams.
-    * `Plasma Bombardier`: Slow, organic siege unit. Lobs corrosive plasma sacks that leave a "dark matter" puddle, slowing and damaging units.
+    * `Plasma Bombardier`: Slow, organic siege unit. Lobs corrosive plasma sacks.
     * `Transporter Ship`: Flying troop transport.
 * **Aircraft:**
     * `Hunter Drone`: (Heli role) Small, fast drone.
     * `Discus Fighter`: (Fighter) Classic UFO.
     * `Annihilator Ship`: (Bomber) Slow, fires a beam onto the ground.
 
-## 6. Anime Republic
+## 6. Anime Republic (Revised)
 
 **Theme / Tech:** Magic, Kawaii Power & Mechs. (Projectiles are rainbows, hearts, glitter, and laser swords).
 
 * **Builder:** `Chibi Builder`
+* **Harvester:** `"Part-Timer" Truck` (A small, fast-food themed truck).
 * **Infantry:**
-    * `Catgirl Soldier`: (Assault Rifle) Yells "Nya!" when firing.
-    * `"Baka" Rocket Launcher`: (Bazooka) Fires absurd, colorful rockets.
-    * `Racing Girl Fighter`: (Assassin) Extremely fast melee unit, dodges shots.
+    * `Kitsune Soldier`: (Assault Rifle) Fox-girl infantry. Standard unit.
+    * `"Tsundere" Rocketeer`: (Bazooka) Fires powerful rockets while shouting "It's not like I'm doing this for you, baka!" (Taiga-inspired).
+    * `"LycoReco" Agent`: (Assassin) Fast, agile unit that dodges attacks and fires non-lethal (but disabling) rounds (Lycoris Recoil-inspired).
     * `"Maho Shojo"`: **(Special Unit / Hero)** Not cloaked. Ability 1: "Stardust Attack" (high single-target damage). Ability 2: "Power of Friendship" (Heals all units in an area).
 * **Vehicles:**
-    * `"Isekai" Truck`: Light vehicle. Ability: Runs over infantry, which then "gets teleported to another world" (Insta-Kill).
+    * `"Band Wagon"`: Light vehicle. A truck with a stage on the back. Plays music (K-On/Bocchi-inspired) that provides a buff aura to allies.
     * `Light Mech "Type-M"`: Medium "tank." All-rounder mech.
-    * `Titan Mech "Astraea"`: Heavy tech tank. Can fly briefly, has an energy sword for melee.
-    * `"Rainbow Cannon"`: Absurdly colorful mortar. Fires an extremely slow, high-arc, glittering shot. Deals magic AoE damage and "Confuses" enemies.
+    * `"Nyan-zer" Super Moe Tank`: Heavy tech tank. A heavily armored, very "Moe" cat-themed tank that meows/nyas when attacking.
+    * `"Rainbow Cannon"`: Absurdly colorful mortar. Fires an extremely slow, high-arc, glittering shot.
     * `Cat Bus`: Troop transport.
 * **Aircraft:**
-    * `Tentacle Being`: (Heli role) Organic, grabs infantry.
+    * `"Maid Dragon"`: (Heli role) A dragon in a maid outfit. Breathes fire, very strong vs. infantry (Dragon Maid-inspired).
     * `"Valkyrie" Fighter`: (Fighter) Can transform into a mech on the ground.
     * `Flying Fortress`: (Bomber) Slow, covered in dozens of cannons.
 
@@ -132,6 +138,7 @@ This document describes the playable factions, their technological themes, and t
 **Theme / Tech:** Faith Power, Light & Relics. (Projectiles are golden light beams, holy fire. Buildings look like cathedrals).
 
 * **Builder:** `Acolyte`
+* **Harvester:** `Tithe Collector` (An armored van that "collects donations").
 * **Infantry:**
     * `Pilgrim`: (Assault Rifle) Armed with a "blessed" crossbow.
     * `Fanatic`: (Bazooka) Throws "Holy Water" Molotovs (holy fire).
