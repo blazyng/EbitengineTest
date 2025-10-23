@@ -331,6 +331,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			vector.StrokeRect(screen, float32(unit.x), float32(unit.y), float32(unitSize), float32(unitSize), 2, color.RGBA{0, 255, 0, 255}, false)
 		}
 	}
+	g.barracks.Draw(screen)
+	//draw barracks
 
 	// Draw selection box
 	if g.isDragging {
