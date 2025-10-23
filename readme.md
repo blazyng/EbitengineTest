@@ -32,7 +32,7 @@ This phase focuses on upgrading the core systems from "functional" to "fun" and 
     * `[ ]` Create new unit states (`StateMovingToBuild`, `StateBuilding`).
 * `[ ]` **Tiled Map System:** Replace the black void with a proper 2D map rendered from a tilemap (e.g., using `tmx` files from the Tiled editor).
 * `[ ]` **Basic Pathfinding:** Upgrade from simple collision-stop to a basic A\* (A-Star) algorithm so units can navigate *around* obstacles.
-* `[ ]S` **Camera Controls:** Implement basic camera scrolling (e.g., with arrow keys or mouse-at-edge).
+* `[ ]` **Camera Controls:** Implement basic camera scrolling (e.g., with arrow keys or mouse-at-edge).
 
 ---
 
