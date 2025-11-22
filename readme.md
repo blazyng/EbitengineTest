@@ -69,6 +69,7 @@ These are long-term goals if the project continues to be fun and successful.
 * `[ ]` **Map Editor:** A simple in-game or external tool to create and save maps.
 * `[ ]` **Multiplayer:** Implement network code for basic 1v1 multiplayer matches.
 
+---
 
 ### Phase x: The crazy ideas
 

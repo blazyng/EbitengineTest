@@ -1,75 +1,147 @@
 package game
 
 import (
+	"fmt"
 	"image"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
-// handleInput processes user mouse clicks
-func (g *Game) handleInput(screenMouseX, screenMouseY int) {
+const (
+	MapWidth  = 2000.0
+	MapHeight = 2000.0
+)
 
+func (g *Game) updateCameraInput() {
+	speed := 5.0
+
+	if ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft) {
+		g.cameraX -= speed
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight) {
+		g.cameraX += speed
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp) {
+		g.cameraY -= speed
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown) {
+		g.cameraY += speed
+	}
+
+	// Clamp camera to map boundaries
+	if g.cameraX < 0 {
+		g.cameraX = 0
+	}
+	if g.cameraY < 0 {
+		g.cameraY = 0
+	}
+	if g.cameraX > MapWidth-320 {
+		g.cameraX = MapWidth - 320
+	}
+	if g.cameraY > MapHeight-240 {
+		g.cameraY = MapHeight - 240
+	}
+}
+
+func (g *Game) handleInput(screenMouseX, screenMouseY int) {
+	// Convert screen coordinates to world coordinates
 	mouseX := float64(screenMouseX) + g.cameraX
 	mouseY := float64(screenMouseY) + g.cameraY
 
+	// --- Build Mode Logic ---
 	if g.isPlacingBuilding {
-		// Position aktualisieren für den "Ghost"
 		g.ghostX = mouseX
 		g.ghostY = mouseY
 
-		// Linksklick zum Platzieren
+		// 1. Check if placement is valid (collision check)
+		canBuild := true
+		ghostRect := image.Rect(int(g.ghostX), int(g.ghostY), int(g.ghostX)+64, int(g.ghostY)+64)
+
+		for _, b := range g.buildings {
+			if ghostRect.Overlaps(b.BoundingBox()) {
+				canBuild = false
+				break
+			}
+		}
+		if canBuild {
+			for _, res := range g.resourceNodes {
+				if ghostRect.Overlaps(res.BoundingBox()) {
+					canBuild = false
+					break
+				}
+			}
+		}
+		g.canBuildHere = canBuild
+
+		// 2. Left Click to Place
 		if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
-			if g.playerResources >= 100 { // Nehmen wir an, ein Gebäude kostet 100
+			if canBuild && g.playerResources >= 100 {
 				g.playerResources -= 100
 
-				// Neues Gebäude erstellen (Fundament)
 				newB := NewBuilding(g.ghostX, g.ghostY)
-				newB.buildProgress = 0.0 // Muss noch gebaut werden
+				newB.buildProgress = 0.0
 				g.buildings = append(g.buildings, newB)
 
-				// Ausgewählte Einheiten zum Bauen schicken
+				// Order selected units to build
 				for _, unit := range g.units {
 					if unit.isSelected {
 						unit.state = StateMovingToBuild
 						unit.targetBuilding = newB
-						// Wir zielen auf die Mitte des Gebäudes
 						unit.targetX = newB.x + newB.width/2
 						unit.targetY = newB.y + newB.height/2
 					}
 				}
-				g.isPlacingBuilding = false // Modus beenden
+				g.isPlacingBuilding = false
+			} else if !canBuild {
+				fmt.Println("Cannot build here!")
 			}
 		}
-		// Rechtsklick zum Abbrechen
+
+		// Right Click to Cancel
 		if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonRight) {
 			g.isPlacingBuilding = false
 		}
-		return // Wenn wir platzieren, machen wir keine andere Input-Verarbeitung
+		return
 	}
 
-	// --- NEU: Taste 'B' startet den Bau-Modus ---
+	// Toggle Build Mode with 'B'
 	if inpututil.IsKeyJustPressed(ebiten.KeyB) {
 		g.isPlacingBuilding = true
-		// Selektion aufheben, damit man besser sieht
 		g.isDragging = false
 	}
-	// --- Right Click (Commands) ---
+
+	// --- Right Click (Issue Commands) ---
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonRight) {
 		clickedNode := false
 		clickedEnemy := false
 
-		// 1. Check if we clicked an enemy
+		// Calculate clamped target position to keep units inside the map
+		targetX := mouseX
+		targetY := mouseY
+		if targetX < 0 {
+			targetX = 0
+		}
+		if targetY < 0 {
+			targetY = 0
+		}
+		if targetX > MapWidth-unitSize {
+			targetX = MapWidth - unitSize
+		}
+		if targetY > MapHeight-unitSize {
+			targetY = MapHeight - unitSize
+		}
+
+		// 1. Check if clicked an enemy (Attack)
 		for _, enemy := range g.enemyUnits {
 			if mouseX >= enemy.x && mouseX <= enemy.x+unitSize &&
 				mouseY >= enemy.y && mouseY <= enemy.y+unitSize {
 
-				// Clicked on an enemy! Send all selected units to attack.
 				for _, unit := range g.units {
 					if unit.isSelected {
 						unit.state = StateAttacking
 						unit.targetEnemy = enemy
-						unit.targetNode = nil // Clear resource target
+						unit.targetNode = nil
 					}
 				}
 				clickedEnemy = true
@@ -77,18 +149,19 @@ func (g *Game) handleInput(screenMouseX, screenMouseY int) {
 			}
 		}
 		if clickedEnemy {
-			return // Don't process other right-click actions
+			return
 		}
+
+		// 2. Check if clicked a resource node (Harvest)
 		for _, node := range g.resourceNodes {
 			if mouseX >= node.x && mouseX <= node.x+node.width &&
 				mouseY >= node.y && mouseY <= node.y+node.height {
 
-				// Clicked on a node! Send all selected units to harvest it.
 				for _, unit := range g.units {
 					if unit.isSelected {
 						unit.state = StateMovingToHarvest
 						unit.targetNode = node
-						unit.targetX = node.x // Target the node's position
+						unit.targetX = node.x
 						unit.targetY = node.y
 					}
 				}
@@ -97,20 +170,20 @@ func (g *Game) handleInput(screenMouseX, screenMouseY int) {
 			}
 		}
 
-		// If we didn't click a node, it's a normal move command
+		// 3. Move Command
 		if !clickedNode {
 			for _, unit := range g.units {
 				if unit.isSelected {
 					unit.state = StateMoving
-					unit.targetNode = nil // Not targeting a node
-					unit.targetX = mouseX
-					unit.targetY = mouseY
+					unit.targetNode = nil
+					unit.targetX = targetX
+					unit.targetY = targetY
 				}
 			}
 		}
 	}
 
-	// --- Left Click (Selection) ---
+	// --- Left Click (Select Unit) ---
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
 		g.isDragging = true
 		g.dragStartX, g.dragStartY = int(mouseX), int(mouseY)
@@ -124,7 +197,7 @@ func (g *Game) handleInput(screenMouseX, screenMouseY int) {
 			}
 		}
 
-		// Deselect all units (unless holding Shift, but we'll add that later)
+		// Deselect all unless shift is held (TODO)
 		for _, unit := range g.units {
 			unit.isSelected = false
 		}
@@ -134,7 +207,7 @@ func (g *Game) handleInput(screenMouseX, screenMouseY int) {
 				if mouseX >= unit.x && mouseX <= unit.x+unitSize &&
 					mouseY >= unit.y && mouseY <= unit.y+unitSize {
 					unit.isSelected = true
-					break // Only select one
+					break
 				}
 			}
 		}
@@ -156,51 +229,19 @@ func (g *Game) handleInput(screenMouseX, screenMouseY int) {
 	}
 }
 
-// Update auch handleProductionInput, da g.barracks weg ist
-// internal/game/input.go
-
+// handleProductionInput handles hotkeys for training units
 func (g *Game) handleProductionInput() {
-	// Wenn U gedrückt wird
 	if inpututil.IsKeyJustPressed(ebiten.KeyU) {
-		// Wir loopen durch ALLE Gebäude
 		for _, b := range g.buildings {
-			// Wir suchen ein Gebäude, das:
-			// 1. Fertig gebaut ist (buildProgress >= 1.0)
-			// 2. Gerade NICHTS produziert (!isBuilding)
-			// 3. (Optional) Wir könnten noch prüfen, ob es der richtige Typ ist (z.B. Kaserne)
-
+			// Find a completed building that is not currently busy
 			if b.buildProgress >= 1.0 && !b.isBuilding {
-				// Haben wir genug Geld?
 				if g.playerResources >= unitCost {
 					g.playerResources -= unitCost
-
-					// Starte Produktion IN DIESEM Gebäude
 					b.isBuilding = true
-					b.productionProgress = 0.0 // Reset Fortschritt
-
-					// Wir brechen nach dem ersten Gebäude ab, damit nicht alle gleichzeitig bauen
-					// (Außer du willst das – dann entfern das 'break')
-					break
+					b.productionProgress = 0.0
+					break // Only build in one barracks per key press
 				}
 			}
 		}
-	}
-}
-
-func (g *Game) updateCameraInput() {
-	// Kamera-Geschwindigkeit
-	speed := 5.0
-
-	if ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft) {
-		g.cameraX -= speed
-	}
-	if ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight) {
-		g.cameraX += speed
-	}
-	if ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp) {
-		g.cameraY -= speed
-	}
-	if ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown) {
-		g.cameraY += speed
 	}
 }

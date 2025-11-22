@@ -8,14 +8,18 @@ import (
 )
 
 func main() {
-	// "Konstructor"-Function
+	// Load assets (images) before starting the game
+	game.LoadAssets()
+
+	// Initialize the game state
 	g, err := game.NewGame()
 	if err != nil {
-		log.Fatalf("Konnte das Spiel nicht initialisieren: %v", err)
+		log.Fatalf("Could not initialize game: %v", err)
 	}
 
-	ebiten.SetWindowSize(800, 800)
-	ebiten.SetWindowTitle("Mubi")
+	ebiten.SetWindowSize(1000, 1000)
+	ebiten.SetWindowTitle("Mubi RTS")
+
 	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)
 	}

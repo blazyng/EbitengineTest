@@ -8,18 +8,17 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
-// UnitState defines what the unit is currently doing
 type UnitState int
 
 const (
-	StateIdle            UnitState = iota // 0
-	StateMoving                           // 1
-	StateMovingToHarvest                  // 2
-	StateHarvesting                       // 3
-	StateReturning                        // 4
-	StateAttacking                        // 5
-	StateMovingToBuild                    // 6
-	StateBuilding                         // 7
+	StateIdle UnitState = iota
+	StateMoving
+	StateMovingToHarvest
+	StateHarvesting
+	StateReturning
+	StateAttacking
+	StateMovingToBuild
+	StateBuilding
 )
 
 type Unit struct {
@@ -72,30 +71,30 @@ func (u *Unit) BoundingBox() image.Rectangle {
 	return image.Rect(int(u.x), int(u.y), int(u.x+unitSize), int(u.y+unitSize))
 }
 
-// Draw draws JUST THIS UNIT
+// Draw renders the unit sprite relative to the camera
 func (u *Unit) Draw(screen *ebiten.Image, camX, camY float64) {
-	// Calculate screen position
 	screenX := float32(u.x - camX)
 	screenY := float32(u.y - camY)
 
-	var unitColor color.RGBA
+	// Render Sprite
+	op := &ebiten.DrawImageOptions{}
 
-	// Set color based on team
-	if u.team == 1 {
-		unitColor = color.RGBA{0, 0, 255, 255} // Blue (Player)
-	} else {
-		unitColor = color.RGBA{150, 0, 150, 255} // Purple (Enemy)
-	}
-
-	// Yellow if carrying resources
+	// Tinting logic using ColorScale
 	if u.cargo > 0 {
-		unitColor = color.RGBA{255, 255, 0, 255}
+		// Carrying Gold -> Yellow tint
+		op.ColorScale.Scale(1, 1, 0, 1)
+	} else if u.team == 2 {
+		// Enemy -> Red tint
+		op.ColorScale.Scale(1, 0.5, 0.5, 1)
+	} else {
+		// Player -> Normal
+		op.ColorScale.Scale(1, 1, 1, 1)
 	}
 
-	// Draw the unit body
-	vector.DrawFilledRect(screen, screenX, screenY, float32(unitSize), float32(unitSize), unitColor, false)
+	op.GeoM.Translate(float64(screenX), float64(screenY))
+	screen.DrawImage(ImgUnit, op)
 
-	// Draw selection border (only for player units)
+	// Draw selection border (player only)
 	if u.isSelected && u.team == 1 {
 		vector.StrokeRect(screen, screenX, screenY, float32(unitSize), float32(unitSize), 2, color.RGBA{0, 255, 0, 255}, false)
 	}
