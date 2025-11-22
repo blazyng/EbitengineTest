@@ -1,4 +1,3 @@
-// internal/game/resource.go
 package game
 
 import (
@@ -12,9 +11,9 @@ import (
 // ResourceNode represents a collectable resource on the map
 type ResourceNode struct {
 	x, y   float64
-	width  float64 // Use width/height for clicking
+	width  float64
 	height float64
-	amount int // How much resource is left
+	amount int
 }
 
 // NewResourceNode creates a new resource
@@ -22,20 +21,23 @@ func NewResourceNode(x, y float64, amount int) *ResourceNode {
 	return &ResourceNode{
 		x:      x,
 		y:      y,
-		width:  32, // Let's make it 32x32 for now
+		width:  32,
 		height: 32,
 		amount: amount,
 	}
 }
 
-// Draw draws the resource node
-func (r *ResourceNode) Draw(screen *ebiten.Image) {
-	// A simple yellow square for "gold"
-	fillColor := color.RGBA{R: 255, G: 255, B: 0, A: 255}
-	vector.DrawFilledRect(screen, float32(r.x), float32(r.y), float32(r.width), float32(r.height), fillColor, false)
-}
-
 // BoundingBox returns the resource's collision rectangle
 func (r *ResourceNode) BoundingBox() image.Rectangle {
 	return image.Rect(int(r.x), int(r.y), int(r.x+r.width), int(r.y+r.height))
+}
+
+// Draw draws the resource node taking camera position into account
+func (r *ResourceNode) Draw(screen *ebiten.Image, camX, camY float64) {
+	fillColor := color.RGBA{R: 255, G: 255, B: 0, A: 255}
+	// Calculate screen position based on camera
+	screenX := float32(r.x - camX)
+	screenY := float32(r.y - camY)
+
+	vector.DrawFilledRect(screen, screenX, screenY, float32(r.width), float32(r.height), fillColor, false)
 }

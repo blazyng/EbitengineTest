@@ -14,7 +14,7 @@ func main() {
 		log.Fatalf("Konnte das Spiel nicht initialisieren: %v", err)
 	}
 
-	ebiten.SetWindowSize(1000, 1000)
+	ebiten.SetWindowSize(800, 800)
 	ebiten.SetWindowTitle("Mubi")
 	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)

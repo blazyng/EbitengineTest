@@ -23,8 +23,11 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 			nextBox := image.Rect(int(nextX), int(nextY), int(nextX+unitSize), int(nextY+unitSize))
 
 			// 1. Check against barracks
-			if nextBox.Overlaps(g.barracks.BoundingBox()) {
-				return true
+			// 1. Check against ALL buildings
+			for _, b := range g.buildings {
+				if nextBox.Overlaps(b.BoundingBox()) {
+					return true
+				}
 			}
 
 			// 2. Check against resource nodes
@@ -33,8 +36,11 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 				if u.targetNode == node {
 					continue
 				}
-				if nextBox.Overlaps(node.BoundingBox()) {
-					return true
+				// 1. Check against ALL buildings
+				for _, b := range g.buildings {
+					if nextBox.Overlaps(b.BoundingBox()) {
+						return true
+					}
 				}
 			}
 
@@ -48,6 +54,54 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 
 		case StateIdle:
 			// Do nothing
+
+		case StateMovingToBuild:
+			// Distanz zum Gebäude prüfen
+			if unit.targetBuilding == nil {
+				unit.state = StateIdle
+				continue
+			}
+
+			dist := distance(unit.x, unit.y, unit.targetBuilding.x, unit.targetBuilding.y)
+			buildRange := 50.0 // Genug Abstand halten
+
+			if dist > buildRange {
+				// Hinlaufen (Copy-Paste von Moving Logic)
+				dx := unit.targetBuilding.x - unit.x
+				dy := unit.targetBuilding.y - unit.y
+				nextX := unit.x + (dx/dist)*unit.speed
+				nextY := unit.y + (dy/dist)*unit.speed
+				// --- NEW: Collision Check ---
+				if !isCollidingAt(unit, nextX, nextY) {
+					unit.x = nextX
+					unit.y = nextY
+				} else {
+					// Stop if we hit something
+					unit.state = StateIdle
+				}
+				// --- END: Collision Check ---
+
+				unit.x = nextX
+				unit.y = nextY
+			} else {
+				// Angekommen -> Anfangen zu bauen
+				unit.state = StateBuilding
+			}
+
+		case StateBuilding:
+			if unit.targetBuilding == nil || unit.targetBuilding.buildProgress >= 1.0 {
+				unit.state = StateIdle
+				unit.targetBuilding = nil
+				continue
+			}
+			// Baufortschritt erhöhen
+			// Sagen wir, eine Einheit baut 20% pro Sekunde
+			unit.targetBuilding.buildProgress += (0.2 * dt)
+
+			if unit.targetBuilding.buildProgress >= 1.0 {
+				unit.targetBuilding.buildProgress = 1.0
+				unit.state = StateIdle // Fertig!
+			}
 
 		case StateMoving:
 			dist := distance(unit.x, unit.y, unit.targetX, unit.targetY)
@@ -227,19 +281,31 @@ func (g *Game) cleanupDeadUnits() {
 	g.enemyUnits = livingEnemyUnits // Replace old slice
 }
 
-// updateBuildings needs one small tweak:
 func (g *Game) updateBuildings() {
-	if g.barracks.isBuilding {
-		dt := 1.0 / float64(ebiten.TPS())
-		g.barracks.buildProgress += dt / unitBuildTime
+	dt := 1.0 / float64(ebiten.TPS())
 
-		if g.barracks.buildProgress >= 1.0 {
-			g.barracks.isBuilding = false
-			g.barracks.buildProgress = 0.0
+	for _, b := range g.buildings {
+		// Schritt 1: Ist das Gebäude selbst noch im Bau?
+		// Wenn buildProgress unter 1.0 ist, ist es noch ein "Gerüst".
+		if b.buildProgress < 1.0 {
+			continue // Überspringe dieses Gebäude, es kann noch nichts tun.
+		}
 
-			// Create a new unit (Team 1)
-			newUnit := NewUnit(g.barracks.rallyPointX, g.barracks.rallyPointY, 1) // Team 1
-			g.units = append(g.units, newUnit)
+		// Schritt 2: Produziert das fertige Gebäude gerade eine Einheit?
+		if b.isBuilding {
+			// Wir nutzen jetzt die NEUE Variable productionProgress
+			b.productionProgress += dt / unitBuildTime
+
+			// Wenn die EINHEIT fertig ist (100%)
+			if b.productionProgress >= 1.0 {
+				b.isBuilding = false
+				b.productionProgress = 0.0
+
+				// Neue Einheit spawnen (Team 1)
+				// Wir nutzen b.rallyPointX statt g.barracks...
+				newUnit := NewUnit(b.rallyPointX, b.rallyPointY, 1)
+				g.units = append(g.units, newUnit)
+			}
 		}
 	}
 }
