@@ -69,6 +69,18 @@ These are long-term goals if the project continues to be fun and successful.
 * `[ ]` **Map Editor:** A simple in-game or external tool to create and save maps.
 * `[ ]` **Multiplayer:** Implement network code for basic 1v1 multiplayer matches.
 
+
+### Phase x: The crazy ideas
+
+These are just funny ideas.
+
+* `[ ]` **Steam Workshop integration for mods**
+* `[ ]` **A co-op campaign and heroes for every faction (Pope, Greek gods, Hatsune Miku)**
+* `[ ]` **The option for contributors to create weekly co-op campaigns (e.g., a Jackie Chan co-op campaign or an official Hatsune Miku co-op campaign)**
+* `[ ]` **LAN-Mode**
+* `[ ]` **Official fun modes like TD or Maul (Warcraft)**
+
+
 ---
 
 ## Technologies
