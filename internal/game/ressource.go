@@ -1,10 +1,12 @@
 package game
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
@@ -37,4 +39,8 @@ func (r *ResourceNode) Draw(screen *ebiten.Image, camX, camY float64) {
 	// TODO: Replace with Sprite
 	fillColor := color.RGBA{R: 255, G: 255, B: 0, A: 255}
 	vector.DrawFilledRect(screen, screenX, screenY, float32(r.width), float32(r.height), fillColor, false)
+
+	// Draw remaining amount text above the node
+	amountText := fmt.Sprintf("%d", r.amount)
+	ebitenutil.DebugPrintAt(screen, amountText, int(screenX), int(screenY)-15)
 }

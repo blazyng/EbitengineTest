@@ -109,4 +109,20 @@ func (u *Unit) Draw(screen *ebiten.Image, camX, camY float64) {
 		// Green foreground
 		vector.DrawFilledRect(screen, screenX, screenY-7, barWidth*healthPercent, 5, color.RGBA{0, 255, 0, 255}, false)
 	}
+
+	// Draw Harvesting Progress Bar (Yellow/Orange, under unit)
+	if u.state == StateHarvesting && u.harvestTimer > 0 {
+		progress := (unitHarvestTime - u.harvestTimer) / unitHarvestTime
+		if progress < 0 {
+			progress = 0
+		}
+		if progress > 1 {
+			progress = 1
+		}
+		barWidth := float32(unitSize)
+		// Dark background
+		vector.DrawFilledRect(screen, screenX, screenY+float32(unitSize)+3, barWidth, 4, color.RGBA{50, 50, 50, 255}, false)
+		// Yellow progress bar
+		vector.DrawFilledRect(screen, screenX, screenY+float32(unitSize)+3, barWidth*float32(progress), 4, color.RGBA{255, 200, 0, 255}, false)
+	}
 }

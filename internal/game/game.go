@@ -49,8 +49,8 @@ func NewGame() (*Game, error) {
 
 	// Initialize Player Units (Team 1)
 	g.units = []*Unit{
-		NewUnit(50, 50, 1),
-		NewUnit(80, 80, 1),
+		NewUnit(150, 50, 1),
+		NewUnit(150, 90, 1),
 	}
 
 	// Initialize Enemy Units (Team 2)
@@ -64,10 +64,10 @@ func NewGame() (*Game, error) {
 		NewResourceNode(200, 200, 1000),
 	}
 
-	// Initialize Buildings (Start with one pre-built barracks)
-	startBarracks := NewBuilding(10, 100)
-	startBarracks.buildProgress = 1.0
-	g.buildings = []*Building{startBarracks}
+	// Initialize Buildings (Start with one pre-built Headquarters at base position)
+	startHQ := NewBuilding(10, 10)
+	startHQ.buildProgress = 1.0
+	g.buildings = []*Building{startHQ}
 
 	return g, nil
 }

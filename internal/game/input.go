@@ -185,9 +185,6 @@ func (g *Game) handleInput(screenMouseX, screenMouseY int) {
 
 	// --- Left Click (Select Unit) ---
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
-		g.isDragging = true
-		g.dragStartX, g.dragStartY = int(mouseX), int(mouseY)
-
 		unitClicked := false
 		var clickedUnit *Unit
 		for _, unit := range g.units {
@@ -201,20 +198,20 @@ func (g *Game) handleInput(screenMouseX, screenMouseY int) {
 
 		shiftPressed := ebiten.IsKeyPressed(ebiten.KeyShift)
 
-		if !shiftPressed {
-			// Deselect all unless shift is held
-			for _, unit := range g.units {
-				unit.isSelected = false
-			}
-		}
-
 		if unitClicked && clickedUnit != nil {
 			if shiftPressed {
 				// Toggle selection
 				clickedUnit.isSelected = !clickedUnit.isSelected
 			} else {
-				clickedUnit.isSelected = true
+				// Deselect others and select this one
+				for _, u := range g.units {
+					u.isSelected = (u == clickedUnit)
+				}
 			}
+		} else {
+			// Clicked empty ground -> start drag selection
+			g.isDragging = true
+			g.dragStartX, g.dragStartY = int(mouseX), int(mouseY)
 		}
 	}
 
@@ -233,6 +230,14 @@ func (g *Game) handleInput(screenMouseX, screenMouseY int) {
 					if selectionRect.Overlaps(unitRect) {
 						unit.isSelected = true
 					} else if !shiftPressed {
+						unit.isSelected = false
+					}
+				}
+			} else {
+				// Simple click on empty ground -> deselect all unless Shift is held
+				shiftPressed := ebiten.IsKeyPressed(ebiten.KeyShift)
+				if !shiftPressed {
+					for _, unit := range g.units {
 						unit.isSelected = false
 					}
 				}

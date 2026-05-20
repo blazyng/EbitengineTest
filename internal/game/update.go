@@ -41,6 +41,31 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 			return false
 		}
 
+		// Unit-to-unit soft separation to prevent overlapping
+		allUnits := append(g.units, g.enemyUnits...)
+		for _, other := range allUnits {
+			if unit == other {
+				continue
+			}
+			dist := distance(unit.x, unit.y, other.x, other.y)
+			minDist := unitSize - 4.0
+			if dist < minDist {
+				if dist == 0 {
+					unit.x -= 0.5
+					continue
+				}
+				dx := (unit.x - other.x) / dist
+				dy := (unit.y - other.y) / dist
+				force := (minDist - dist) / minDist * 0.8
+				nextX := unit.x + dx*force
+				nextY := unit.y + dy*force
+				if !isCollidingAt(unit, nextX, nextY) {
+					unit.x = nextX
+					unit.y = nextY
+				}
+			}
+		}
+
 		// Helper: Moves unit with sliding collision response
 		moveWithSliding := func(u *Unit, nextX, nextY float64) bool {
 			if !isCollidingAt(u, nextX, nextY) {
@@ -161,8 +186,16 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 					unit.cargo = collected
 
 					unit.state = StateReturning
-					unit.targetX = float64(g.basePosition.X)
-					unit.targetY = float64(g.basePosition.Y)
+					dropOff := g.findClosestDropOffBuilding(unit.x, unit.y)
+					if dropOff != nil {
+						unit.targetBuilding = dropOff
+						unit.targetX = dropOff.x + dropOff.width/2
+						unit.targetY = dropOff.y + dropOff.height/2
+					} else {
+						unit.targetBuilding = nil
+						unit.targetX = float64(g.basePosition.X)
+						unit.targetY = float64(g.basePosition.Y)
+					}
 
 					if unit.targetNode.amount <= 0 {
 						unit.targetNode = nil
@@ -176,9 +209,12 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 
 		case StateReturning:
 			dist := distance(unit.x, unit.y, unit.targetX, unit.targetY)
-			baseTouchingDistance := 10.0
+			touchingDistance := 10.0
+			if unit.targetBuilding != nil {
+				touchingDistance = (unit.targetBuilding.width / 2.0) + 12.0
+			}
 
-			if dist > baseTouchingDistance {
+			if dist > touchingDistance {
 				dx := unit.targetX - unit.x
 				dy := unit.targetY - unit.y
 				nextX := unit.x + (dx/dist)*unit.speed
@@ -188,10 +224,10 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 					unit.state = StateIdle
 				}
 			} else {
-				unit.x = unit.targetX
-				unit.y = unit.targetY
 				g.playerResources += unit.cargo
 				unit.cargo = 0
+				unit.targetBuilding = nil // Clear target building reference for collision
+
 				if unit.targetNode != nil && unit.targetNode.amount > 0 {
 					unit.state = StateMovingToHarvest
 					unit.targetX = unit.targetNode.x
@@ -272,6 +308,21 @@ func (g *Game) findClosestResourceNode(x, y float64) *ResourceNode {
 			if dist < minDist {
 				minDist = dist
 				closest = node
+			}
+		}
+	}
+	return closest
+}
+
+func (g *Game) findClosestDropOffBuilding(x, y float64) *Building {
+	var closest *Building
+	minDist := math.MaxFloat64
+	for _, b := range g.buildings {
+		if b.buildProgress >= 1.0 {
+			dist := distance(x, y, b.x, b.y)
+			if dist < minDist {
+				minDist = dist
+				closest = b
 			}
 		}
 	}
