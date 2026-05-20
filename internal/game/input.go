@@ -16,6 +16,7 @@ const (
 func (g *Game) updateCameraInput() {
 	speed := 5.0
 
+	// 1. Keyboard Controls
 	if ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft) {
 		g.cameraX -= speed
 	}
@@ -27,6 +28,26 @@ func (g *Game) updateCameraInput() {
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown) {
 		g.cameraY += speed
+	}
+
+	// 2. Mouse Edge-Scrolling Controls
+	mouseX, mouseY := ebiten.CursorPosition()
+	edgeThreshold := 8 // 8 logical pixels from the border (corresponds to 24 actual pixels with 3x scale)
+
+	// Check if mouse is within logical window bounds to prevent scrolling when out of window focus
+	if mouseX >= 0 && mouseX <= 320 && mouseY >= 0 && mouseY <= 240 {
+		if mouseX < edgeThreshold {
+			g.cameraX -= speed
+		}
+		if mouseX > 320-edgeThreshold {
+			g.cameraX += speed
+		}
+		if mouseY < edgeThreshold {
+			g.cameraY -= speed
+		}
+		if mouseY > 240-edgeThreshold {
+			g.cameraY += speed
+		}
 	}
 
 	// Clamp camera to map boundaries
