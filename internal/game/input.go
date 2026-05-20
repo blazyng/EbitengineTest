@@ -189,26 +189,31 @@ func (g *Game) handleInput(screenMouseX, screenMouseY int) {
 		g.dragStartX, g.dragStartY = int(mouseX), int(mouseY)
 
 		unitClicked := false
+		var clickedUnit *Unit
 		for _, unit := range g.units {
 			if mouseX >= unit.x && mouseX <= unit.x+unitSize &&
 				mouseY >= unit.y && mouseY <= unit.y+unitSize {
 				unitClicked = true
+				clickedUnit = unit
 				break
 			}
 		}
 
-		// Deselect all unless shift is held (TODO)
-		for _, unit := range g.units {
-			unit.isSelected = false
+		shiftPressed := ebiten.IsKeyPressed(ebiten.KeyShift)
+
+		if !shiftPressed {
+			// Deselect all unless shift is held
+			for _, unit := range g.units {
+				unit.isSelected = false
+			}
 		}
 
-		if unitClicked {
-			for _, unit := range g.units {
-				if mouseX >= unit.x && mouseX <= unit.x+unitSize &&
-					mouseY >= unit.y && mouseY <= unit.y+unitSize {
-					unit.isSelected = true
-					break
-				}
+		if unitClicked && clickedUnit != nil {
+			if shiftPressed {
+				// Toggle selection
+				clickedUnit.isSelected = !clickedUnit.isSelected
+			} else {
+				clickedUnit.isSelected = true
 			}
 		}
 	}
@@ -219,10 +224,17 @@ func (g *Game) handleInput(screenMouseX, screenMouseY int) {
 			g.isDragging = false
 			selectionRect := image.Rect(g.dragStartX, g.dragStartY, int(mouseX), int(mouseY)).Canon()
 
-			for _, unit := range g.units {
-				unitRect := image.Rect(int(unit.x), int(unit.y), int(unit.x)+int(unitSize), int(unit.y)+int(unitSize))
-				if selectionRect.Overlaps(unitRect) {
-					unit.isSelected = true
+			// Only perform box selection if the dragged area is large enough (to avoid overriding single click on release)
+			if selectionRect.Dx() > 4 || selectionRect.Dy() > 4 {
+				shiftPressed := ebiten.IsKeyPressed(ebiten.KeyShift)
+
+				for _, unit := range g.units {
+					unitRect := image.Rect(int(unit.x), int(unit.y), int(unit.x)+int(unitSize), int(unit.y)+int(unitSize))
+					if selectionRect.Overlaps(unitRect) {
+						unit.isSelected = true
+					} else if !shiftPressed {
+						unit.isSelected = false
+					}
 				}
 			}
 		}

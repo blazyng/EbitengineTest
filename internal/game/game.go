@@ -95,6 +95,7 @@ func (g *Game) Update() error {
 
 	// 4. Cleanup
 	g.cleanupDeadUnits()
+	g.cleanupDepletedResources()
 
 	return nil
 }
@@ -168,6 +169,17 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	hintText := "WASD: Camera | [B]: Build Mode | [U]: Train Unit"
 	ebitenutil.DebugPrintAt(screen, hintText, 0, 15)
+
+	selectedCount := 0
+	for _, u := range g.units {
+		if u.isSelected {
+			selectedCount++
+		}
+	}
+	if selectedCount > 0 {
+		selText := fmt.Sprintf("Selected: %d", selectedCount)
+		ebitenutil.DebugPrintAt(screen, selText, 0, 30)
+	}
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {

@@ -2,6 +2,7 @@ package game
 
 import (
 	"image"
+	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -20,6 +21,9 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 
 			// Check against Buildings
 			for _, b := range g.buildings {
+				if u.targetBuilding == b {
+					continue
+				}
 				if nextBox.Overlaps(b.BoundingBox()) {
 					return true
 				}
@@ -33,6 +37,26 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 				if nextBox.Overlaps(node.BoundingBox()) {
 					return true
 				}
+			}
+			return false
+		}
+
+		// Helper: Moves unit with sliding collision response
+		moveWithSliding := func(u *Unit, nextX, nextY float64) bool {
+			if !isCollidingAt(u, nextX, nextY) {
+				u.x = nextX
+				u.y = nextY
+				return true
+			}
+			// Try to slide along the X-axis
+			if !isCollidingAt(u, nextX, u.y) {
+				u.x = nextX
+				return true
+			}
+			// Try to slide along the Y-axis
+			if !isCollidingAt(u, u.x, nextY) {
+				u.y = nextY
+				return true
 			}
 			return false
 		}
@@ -52,10 +76,7 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 				nextX := unit.x + (dx/dist)*unit.speed
 				nextY := unit.y + (dy/dist)*unit.speed
 
-				if !isCollidingAt(unit, nextX, nextY) {
-					unit.x = nextX
-					unit.y = nextY
-				} else {
+				if !moveWithSliding(unit, nextX, nextY) {
 					unit.state = StateIdle
 				}
 			} else {
@@ -78,10 +99,7 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 				nextX := unit.x + (dx/dist)*unit.speed
 				nextY := unit.y + (dy/dist)*unit.speed
 
-				if !isCollidingAt(unit, nextX, nextY) {
-					unit.x = nextX
-					unit.y = nextY
-				} else {
+				if !moveWithSliding(unit, nextX, nextY) {
 					unit.state = StateIdle
 				}
 			} else {
@@ -103,6 +121,11 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 			}
 
 		case StateMovingToHarvest:
+			if unit.targetNode == nil || unit.targetNode.amount <= 0 {
+				unit.state = StateIdle
+				unit.targetNode = nil
+				continue
+			}
 			dist := distance(unit.x, unit.y, unit.targetNode.x, unit.targetNode.y)
 			touchingDistance := 10.0
 
@@ -112,10 +135,7 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 				nextX := unit.x + (dx/dist)*unit.speed
 				nextY := unit.y + (dy/dist)*unit.speed
 
-				if !isCollidingAt(unit, nextX, nextY) {
-					unit.x = nextX
-					unit.y = nextY
-				} else {
+				if !moveWithSliding(unit, nextX, nextY) {
 					unit.state = StateIdle
 				}
 			} else {
@@ -124,6 +144,11 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 			}
 
 		case StateHarvesting:
+			if unit.targetNode == nil || unit.targetNode.amount <= 0 {
+				unit.state = StateIdle
+				unit.targetNode = nil
+				continue
+			}
 			unit.harvestTimer -= dt
 			if unit.harvestTimer <= 0 {
 				if unit.targetNode.amount > 0 {
@@ -159,10 +184,7 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 				nextX := unit.x + (dx/dist)*unit.speed
 				nextY := unit.y + (dy/dist)*unit.speed
 
-				if !isCollidingAt(unit, nextX, nextY) {
-					unit.x = nextX
-					unit.y = nextY
-				} else {
+				if !moveWithSliding(unit, nextX, nextY) {
 					unit.state = StateIdle
 				}
 			} else {
@@ -175,7 +197,15 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 					unit.targetX = unit.targetNode.x
 					unit.targetY = unit.targetNode.y
 				} else {
-					unit.state = StateIdle
+					// Search for a new node if targetNode is nil or depleted
+					unit.targetNode = g.findClosestResourceNode(unit.x, unit.y)
+					if unit.targetNode != nil && unit.targetNode.amount > 0 {
+						unit.state = StateMovingToHarvest
+						unit.targetX = unit.targetNode.x
+						unit.targetY = unit.targetNode.y
+					} else {
+						unit.state = StateIdle
+					}
 				}
 			}
 
@@ -199,10 +229,7 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 				nextX := unit.x + (dx/dist)*unit.speed
 				nextY := unit.y + (dy/dist)*unit.speed
 
-				if !isCollidingAt(unit, nextX, nextY) {
-					unit.x = nextX
-					unit.y = nextY
-				}
+				moveWithSliding(unit, nextX, nextY)
 			}
 		}
 	}
@@ -224,6 +251,31 @@ func (g *Game) cleanupDeadUnits() {
 		}
 	}
 	g.enemyUnits = livingEnemyUnits
+}
+
+func (g *Game) cleanupDepletedResources() {
+	activeNodes := make([]*ResourceNode, 0, len(g.resourceNodes))
+	for _, node := range g.resourceNodes {
+		if node.amount > 0 {
+			activeNodes = append(activeNodes, node)
+		}
+	}
+	g.resourceNodes = activeNodes
+}
+
+func (g *Game) findClosestResourceNode(x, y float64) *ResourceNode {
+	var closest *ResourceNode
+	minDist := math.MaxFloat64
+	for _, node := range g.resourceNodes {
+		if node.amount > 0 {
+			dist := distance(x, y, node.x, node.y)
+			if dist < minDist {
+				minDist = dist
+				closest = node
+			}
+		}
+	}
+	return closest
 }
 
 func (g *Game) updateBuildings() {

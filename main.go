@@ -17,7 +17,7 @@ func main() {
 		log.Fatalf("Could not initialize game: %v", err)
 	}
 
-	ebiten.SetWindowSize(1000, 1000)
+	ebiten.SetWindowSize(960, 720)
 	ebiten.SetWindowTitle("Mubi RTS")
 
 	if err := ebiten.RunGame(g); err != nil {
