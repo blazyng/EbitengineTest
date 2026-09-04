@@ -17,8 +17,10 @@ func main() {
 		log.Fatalf("Could not initialize game: %v", err)
 	}
 
-	ebiten.SetWindowSize(960, 720)
+	// Set window size to 1280x960 (4x retro scale) and allow user to resize/maximize freely
+	ebiten.SetWindowSize(1280, 960)
 	ebiten.SetWindowTitle("Mubi RTS")
+	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 
 	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)

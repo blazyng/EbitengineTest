@@ -31,16 +31,21 @@ func (r *ResourceNode) BoundingBox() image.Rectangle {
 	return image.Rect(int(r.x), int(r.y), int(r.x+r.width), int(r.y+r.height))
 }
 
-func (r *ResourceNode) Draw(screen *ebiten.Image, camX, camY float64) {
-	screenX := float32(r.x - camX)
-	screenY := float32(r.y - camY)
+func (r *ResourceNode) Draw(screen *ebiten.Image, camX, camY, zoom float64) {
+	screenX := float32((r.x - camX) * zoom)
+	screenY := float32((r.y - camY) * zoom)
+	rw := float32(r.width * zoom)
+	rh := float32(r.height * zoom)
 
-	// For resources we still use a simple yellow rectangle for now
-	// TODO: Replace with Sprite
+	// Viewport culling
+	if screenX+rw < 0 || screenX > float32(ViewWidth) || screenY+rh < 0 || screenY > float32(ViewHeight) {
+		return
+	}
+
 	fillColor := color.RGBA{R: 255, G: 255, B: 0, A: 255}
-	vector.DrawFilledRect(screen, screenX, screenY, float32(r.width), float32(r.height), fillColor, false)
+	vector.DrawFilledRect(screen, screenX, screenY, rw, rh, fillColor, false)
 
 	// Draw remaining amount text above the node
 	amountText := fmt.Sprintf("%d", r.amount)
-	ebitenutil.DebugPrintAt(screen, amountText, int(screenX), int(screenY)-15)
+	ebitenutil.DebugPrintAt(screen, amountText, int(screenX), int(screenY)-12)
 }

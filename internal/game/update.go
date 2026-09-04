@@ -86,6 +86,55 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 			return false
 		}
 
+		// Helper: Moves unit along its path or toward destination with sliding collision
+		stepAlongPath := func(u *Unit, targetX, targetY float64, ignoreBuilding *Building, ignoreNode *ResourceNode) bool {
+			// If path is empty, find path to target
+			if len(u.path) == 0 {
+				u.path = g.FindPath(u.x, u.y, targetX, targetY, ignoreBuilding, ignoreNode)
+			}
+
+			// If still empty (e.g. adjacent or in direct reach)
+			if len(u.path) == 0 {
+				dist := distance(u.x, u.y, targetX, targetY)
+				if dist <= math.Max(4.0, u.speed) {
+					u.x = targetX
+					u.y = targetY
+					return true
+				}
+				dx := targetX - u.x
+				dy := targetY - u.y
+				nextX := u.x + (dx/dist)*u.speed
+				nextY := u.y + (dy/dist)*u.speed
+				return moveWithSliding(u, nextX, nextY)
+			}
+
+			// Follow next waypoint
+			wp := u.path[0]
+			wpDist := distance(u.x, u.y, wp.X, wp.Y)
+			reachDist := math.Max(4.0, u.speed)
+
+			if wpDist <= reachDist {
+				u.x = wp.X
+				u.y = wp.Y
+				u.path = u.path[1:]
+				return true
+			}
+
+			dx := wp.X - u.x
+			dy := wp.Y - u.y
+			step := math.Min(wpDist, u.speed)
+			nextX := u.x + (dx/wpDist)*step
+			nextY := u.y + (dy/wpDist)*step
+
+			if !moveWithSliding(u, nextX, nextY) {
+				// Blocked by dynamic collision (e.g. another unit or newly placed building)
+				// Clear path to allow repath
+				u.path = nil
+				return false
+			}
+			return true
+		}
+
 		switch unit.state {
 
 		case StateIdle:
@@ -96,45 +145,58 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 			touchingDistance := 5.0
 
 			if dist > touchingDistance {
-				dx := unit.targetX - unit.x
-				dy := unit.targetY - unit.y
-				nextX := unit.x + (dx/dist)*unit.speed
-				nextY := unit.y + (dy/dist)*unit.speed
-
-				if !moveWithSliding(unit, nextX, nextY) {
-					unit.state = StateIdle
+				if !stepAlongPath(unit, unit.targetX, unit.targetY, nil, nil) {
+					unit.stuckFrames++
+					if unit.stuckFrames > 30 {
+						unit.state = StateIdle
+						unit.path = nil
+						unit.stuckFrames = 0
+					}
+				} else {
+					unit.stuckFrames = 0
 				}
 			} else {
 				unit.x = unit.targetX
 				unit.y = unit.targetY
 				unit.state = StateIdle
+				unit.path = nil
+				unit.stuckFrames = 0
 			}
 
 		case StateMovingToBuild:
 			if unit.targetBuilding == nil {
 				unit.state = StateIdle
+				unit.path = nil
 				continue
 			}
 			dist := distance(unit.x, unit.y, unit.targetBuilding.x, unit.targetBuilding.y)
 			buildRange := 50.0
 
 			if dist > buildRange {
-				dx := unit.targetBuilding.x - unit.x
-				dy := unit.targetBuilding.y - unit.y
-				nextX := unit.x + (dx/dist)*unit.speed
-				nextY := unit.y + (dy/dist)*unit.speed
-
-				if !moveWithSliding(unit, nextX, nextY) {
-					unit.state = StateIdle
+				targetX := unit.targetBuilding.x + unit.targetBuilding.width/2.0
+				targetY := unit.targetBuilding.y + unit.targetBuilding.height/2.0
+				if !stepAlongPath(unit, targetX, targetY, unit.targetBuilding, nil) {
+					unit.stuckFrames++
+					if unit.stuckFrames > 45 {
+						unit.state = StateIdle
+						unit.path = nil
+						unit.stuckFrames = 0
+					}
+				} else {
+					unit.stuckFrames = 0
 				}
 			} else {
 				unit.state = StateBuilding
+				unit.path = nil
+				unit.stuckFrames = 0
 			}
 
 		case StateBuilding:
 			if unit.targetBuilding == nil || unit.targetBuilding.buildProgress >= 1.0 {
 				unit.state = StateIdle
 				unit.targetBuilding = nil
+				unit.path = nil
+				unit.stuckFrames = 0
 				continue
 			}
 			// Construction speed: 20% per second
@@ -143,41 +205,55 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 			if unit.targetBuilding.buildProgress >= 1.0 {
 				unit.targetBuilding.buildProgress = 1.0
 				unit.state = StateIdle
+				unit.path = nil
+				unit.stuckFrames = 0
 			}
 
 		case StateMovingToHarvest:
 			if unit.targetNode == nil || unit.targetNode.amount <= 0 {
 				unit.state = StateIdle
 				unit.targetNode = nil
+				unit.path = nil
+				unit.stuckFrames = 0
 				continue
 			}
 			dist := distance(unit.x, unit.y, unit.targetNode.x, unit.targetNode.y)
 			touchingDistance := 10.0
 
 			if dist > touchingDistance {
-				dx := unit.targetNode.x - unit.x
-				dy := unit.targetNode.y - unit.y
-				nextX := unit.x + (dx/dist)*unit.speed
-				nextY := unit.y + (dy/dist)*unit.speed
-
-				if !moveWithSliding(unit, nextX, nextY) {
-					unit.state = StateIdle
+				if !stepAlongPath(unit, unit.targetNode.x, unit.targetNode.y, nil, unit.targetNode) {
+					unit.stuckFrames++
+					if unit.stuckFrames > 45 {
+						unit.state = StateIdle
+						unit.path = nil
+						unit.stuckFrames = 0
+					}
+				} else {
+					unit.stuckFrames = 0
 				}
 			} else {
 				unit.state = StateHarvesting
 				unit.harvestTimer = unitHarvestTime
+				unit.path = nil
+				unit.stuckFrames = 0
 			}
 
 		case StateHarvesting:
 			if unit.targetNode == nil || unit.targetNode.amount <= 0 {
 				unit.state = StateIdle
 				unit.targetNode = nil
+				unit.path = nil
+				unit.stuckFrames = 0
 				continue
 			}
 			unit.harvestTimer -= dt
 			if unit.harvestTimer <= 0 {
 				if unit.targetNode.amount > 0 {
-					collected := unitCargoSize
+					capacity := unit.cargoCapacity
+					if capacity <= 0 {
+						capacity = unitCargoSize
+					}
+					collected := capacity
 					if unit.targetNode.amount < collected {
 						collected = unit.targetNode.amount
 					}
@@ -186,6 +262,8 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 					unit.cargo = collected
 
 					unit.state = StateReturning
+					unit.path = nil
+					unit.stuckFrames = 0
 					dropOff := g.findClosestDropOffBuilding(unit.x, unit.y)
 					if dropOff != nil {
 						unit.targetBuilding = dropOff
@@ -204,6 +282,8 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 				} else {
 					unit.state = StateIdle
 					unit.targetNode = nil
+					unit.path = nil
+					unit.stuckFrames = 0
 				}
 			}
 
@@ -215,18 +295,22 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 			}
 
 			if dist > touchingDistance {
-				dx := unit.targetX - unit.x
-				dy := unit.targetY - unit.y
-				nextX := unit.x + (dx/dist)*unit.speed
-				nextY := unit.y + (dy/dist)*unit.speed
-
-				if !moveWithSliding(unit, nextX, nextY) {
-					unit.state = StateIdle
+				if !stepAlongPath(unit, unit.targetX, unit.targetY, unit.targetBuilding, nil) {
+					unit.stuckFrames++
+					if unit.stuckFrames > 45 {
+						unit.state = StateIdle
+						unit.path = nil
+						unit.stuckFrames = 0
+					}
+				} else {
+					unit.stuckFrames = 0
 				}
 			} else {
 				g.playerResources += unit.cargo
 				unit.cargo = 0
 				unit.targetBuilding = nil // Clear target building reference for collision
+				unit.path = nil
+				unit.stuckFrames = 0
 
 				if unit.targetNode != nil && unit.targetNode.amount > 0 {
 					unit.state = StateMovingToHarvest
@@ -249,23 +333,29 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 			if unit.targetEnemy == nil || unit.targetEnemy.health <= 0 {
 				unit.state = StateIdle
 				unit.targetEnemy = nil
+				unit.path = nil
+				unit.stuckFrames = 0
 				continue
 			}
 
 			dist := distance(unit.x, unit.y, unit.targetEnemy.x, unit.targetEnemy.y)
 
 			if dist <= unit.attackRange {
+				unit.path = nil
+				unit.stuckFrames = 0
 				if unit.attackTimer <= 0 {
 					unit.targetEnemy.health -= unit.attackDamage
 					unit.attackTimer = 1.0 / unit.attackSpeed
 				}
 			} else {
-				dx := unit.targetEnemy.x - unit.x
-				dy := unit.targetEnemy.y - unit.y
-				nextX := unit.x + (dx/dist)*unit.speed
-				nextY := unit.y + (dy/dist)*unit.speed
-
-				moveWithSliding(unit, nextX, nextY)
+				// Enemy might move, so if last waypoint is far from enemy, repath
+				if len(unit.path) > 0 {
+					lastPt := unit.path[len(unit.path)-1]
+					if distance(lastPt.X, lastPt.Y, unit.targetEnemy.x, unit.targetEnemy.y) > unit.attackRange {
+						unit.path = nil
+					}
+				}
+				stepAlongPath(unit, unit.targetEnemy.x, unit.targetEnemy.y, nil, nil)
 			}
 		}
 	}
@@ -295,6 +385,9 @@ func (g *Game) cleanupDepletedResources() {
 		if node.amount > 0 {
 			activeNodes = append(activeNodes, node)
 		}
+	}
+	if len(activeNodes) != len(g.resourceNodes) {
+		g.InvalidatePathGrid()
 	}
 	g.resourceNodes = activeNodes
 }
@@ -338,14 +431,27 @@ func (g *Game) updateBuildings() {
 		}
 
 		if b.isBuilding {
-			b.productionProgress += dt / unitBuildTime
+			buildTime := b.productionTime
+			if buildTime <= 0 {
+				buildTime = unitBuildTime
+			}
+			b.productionProgress += dt / buildTime
 
 			if b.productionProgress >= 1.0 {
 				b.isBuilding = false
 				b.productionProgress = 0.0
 
-				newUnit := NewUnit(b.rallyPointX, b.rallyPointY, 1)
-				g.units = append(g.units, newUnit)
+				team := b.team
+				if team == 0 {
+					team = 1
+				}
+				faction := b.faction
+				newUnit := NewFactionUnit(b.rallyPointX, b.rallyPointY, team, faction, b.producingType)
+				if team == 1 {
+					g.units = append(g.units, newUnit)
+				} else {
+					g.enemyUnits = append(g.enemyUnits, newUnit)
+				}
 			}
 		}
 	}
