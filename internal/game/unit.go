@@ -53,6 +53,11 @@ type Unit struct {
 	// Pathfinding
 	path        []Point
 	stuckFrames int
+
+	// Combat Animation
+	shootAnimTimer float64
+	aimDirX        float64
+	aimDirY        float64
 }
 
 const (
@@ -146,9 +151,25 @@ func (u *Unit) Draw(screen *ebiten.Image, camX, camY, zoom float64) {
 		}
 	}
 
+	recoilX := float32(0)
+	recoilY := float32(0)
+	if u.shootAnimTimer > 0 {
+		recoilX = float32(-u.aimDirX * 2.5 * zoom)
+		recoilY = float32(-u.aimDirY * 2.5 * zoom)
+		op.ColorScale.Scale(1.3, 1.3, 1.3, 1) // Bright flash on firing unit body
+	}
+
 	op.GeoM.Scale(zoom, zoom)
-	op.GeoM.Translate(float64(screenX), float64(screenY))
+	op.GeoM.Translate(float64(screenX+recoilX), float64(screenY+recoilY))
 	screen.DrawImage(ImgUnit, op)
+
+	// Muzzle flash on weapon barrel
+	if u.shootAnimTimer > 0 && (u.aimDirX != 0 || u.aimDirY != 0) {
+		barrelX := screenX + uSize/2.0 + float32(u.aimDirX*float64(uSize)*0.55)
+		barrelY := screenY + uSize/2.0 + float32(u.aimDirY*float64(uSize)*0.55)
+		vector.DrawFilledCircle(screen, barrelX, barrelY, float32(3.5*zoom), color.RGBA{255, 255, 180, 240}, false)
+		vector.DrawFilledCircle(screen, barrelX, barrelY, float32(1.8*zoom), color.RGBA{255, 255, 255, 255}, false)
+	}
 
 	// Draw role badge pip at top right of sprite
 	cfg := GetUnitConfig(u.faction, u.unitType)

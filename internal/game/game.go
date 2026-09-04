@@ -25,9 +25,11 @@ type Game struct {
 	selectedBuilding *Building
 
 	// Building placement state
-	isPlacingBuilding bool
-	ghostX, ghostY    float64
-	canBuildHere      bool
+	isBuildMenuOpen      bool
+	isPlacingBuilding    bool
+	placingBuildingType  BuildingType
+	ghostX, ghostY       float64
+	canBuildHere         bool
 
 	// Camera state
 	cameraX    float64
@@ -43,6 +45,10 @@ type Game struct {
 
 	// Pathfinding
 	basePathGrid *PathGrid
+
+	// Combat & Projectiles
+	projectiles []*Projectile
+	particles   []*Particle
 }
 
 const (
@@ -109,7 +115,15 @@ func (g *Game) Update() error {
 	g.updateUnits(g.enemyUnits, g.units) // Enemy units
 	g.updateBuildings()
 
-	// 4. Cleanup
+	// 4. Update Combat & FX
+	dt := 1.0 / float64(ebiten.TPS())
+	if dt <= 0 {
+		dt = 1.0 / 60.0
+	}
+	g.updateProjectiles(dt)
+	g.updateParticles(dt)
+
+	// 5. Cleanup
 	g.cleanupDeadUnits()
 	g.cleanupDepletedResources()
 
@@ -124,36 +138,32 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	tileH := float64(h)
 
 	minTileX := int(math.Floor(g.cameraX/tileW)) * w
-	if minTileX < 0 {
-		minTileX = 0
-	}
-	maxTileX := int(math.Ceil((g.cameraX+float64(ViewWidth)/g.cameraZoom)/tileW)) * w
+	minTileY := int(math.Floor(g.cameraY/tileH)) * h
+
+	effectiveViewW := float64(ViewWidth) / g.cameraZoom
+	effectiveViewH := float64(ViewHeight) / g.cameraZoom
+	maxTileX := int(math.Ceil((g.cameraX+effectiveViewW)/tileW)) * w
+	maxTileY := int(math.Ceil((g.cameraY+effectiveViewH)/tileH)) * h
+
 	if maxTileX > MapWidth {
 		maxTileX = MapWidth
 	}
-
-	minTileY := int(math.Floor(g.cameraY/tileH)) * h
-	if minTileY < 0 {
-		minTileY = 0
-	}
-	maxTileY := int(math.Ceil((g.cameraY+float64(ViewHeight)/g.cameraZoom)/tileH)) * h
 	if maxTileY > MapHeight {
 		maxTileY = MapHeight
 	}
 
-	for x := minTileX; x < maxTileX; x += w {
-		for y := minTileY; y < maxTileY; y += h {
-			screenX := (float64(x) - g.cameraX) * g.cameraZoom
-			screenY := (float64(y) - g.cameraY) * g.cameraZoom
-
+	for y := minTileY; y < maxTileY; y += h {
+		for x := minTileX; x < maxTileX; x += w {
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Scale(g.cameraZoom, g.cameraZoom)
+			screenX := (float64(x) - g.cameraX) * g.cameraZoom
+			screenY := (float64(y) - g.cameraY) * g.cameraZoom
 			op.GeoM.Translate(screenX, screenY)
 			screen.DrawImage(ImgGround, op)
 		}
 	}
 
-	// 2. Draw Resources
+	// 2. Draw Resource Nodes
 	for _, node := range g.resourceNodes {
 		node.Draw(screen, g.cameraX, g.cameraY, g.cameraZoom)
 	}
@@ -169,21 +179,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		unit.Draw(screen, g.cameraX, g.cameraY, g.cameraZoom)
 	}
 
-	// 5. Draw Ghost Building (Placement Mode)
-	if g.isPlacingBuilding {
-		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Scale(g.cameraZoom, g.cameraZoom)
-		screenX := (g.ghostX - g.cameraX) * g.cameraZoom
-		screenY := (g.ghostY - g.cameraY) * g.cameraZoom
-		op.GeoM.Translate(screenX, screenY)
+	// 5. Draw Projectiles and Visual Combat FX
+	g.DrawCombat(screen, g.cameraX, g.cameraY, g.cameraZoom)
 
-		// Color feedback: Red if blocked, transparent white if valid
-		if !g.canBuildHere {
-			op.ColorScale.Scale(1, 0, 0, 0.7) // Red
-		} else {
-			op.ColorScale.Scale(1, 1, 1, 0.5) // Transparent
-		}
-		screen.DrawImage(ImgBuilding, op)
+	// 6. Draw Ghost Building (Placement Mode)
+	if g.isPlacingBuilding {
+		g.DrawGhostBuilding(screen, g.placingBuildingType, g.ghostX, g.ghostY, g.canBuildHere, g.cameraX, g.cameraY, g.cameraZoom)
 	}
 
 	// 6. Draw Selection Box

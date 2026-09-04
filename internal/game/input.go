@@ -164,6 +164,8 @@ func (g *Game) handleInput(screenMouseX, screenMouseY int) {
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		if g.isPlacingBuilding {
 			g.isPlacingBuilding = false
+		} else if g.isBuildMenuOpen {
+			g.isBuildMenuOpen = false
 		} else {
 			for _, u := range g.units {
 				u.isSelected = false
@@ -183,16 +185,17 @@ func (g *Game) handleInput(screenMouseX, screenMouseY int) {
 	if g.isPlacingBuilding {
 		g.ghostX = mouseX
 		g.ghostY = mouseY
+		cfg := GetBuildingConfig(g.placingBuildingType)
 
 		// 1. Check if placement is valid (collision check)
 		canBuild := true
 
 		// Cannot place building over HUD
-		if screenMouseY+64 > HudY {
+		if float64(screenMouseY)+cfg.Height*g.cameraZoom > float64(HudY) {
 			canBuild = false
 		}
 
-		ghostRect := image.Rect(int(g.ghostX), int(g.ghostY), int(g.ghostX)+64, int(g.ghostY)+64)
+		ghostRect := image.Rect(int(g.ghostX), int(g.ghostY), int(g.ghostX+cfg.Width), int(g.ghostY+cfg.Height))
 
 		if canBuild {
 			for _, b := range g.buildings {
@@ -214,10 +217,10 @@ func (g *Game) handleInput(screenMouseX, screenMouseY int) {
 
 		// 2. Left Click to Place
 		if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
-			if canBuild && g.playerResources >= 100 {
-				g.playerResources -= 100
+			if canBuild && g.playerResources >= cfg.Cost {
+				g.playerResources -= cfg.Cost
 
-				newB := NewBuilding(g.ghostX, g.ghostY)
+				newB := NewSpecificBuilding(g.ghostX, g.ghostY, 1, g.playerFaction, g.placingBuildingType)
 				newB.buildProgress = 0.0
 				g.buildings = append(g.buildings, newB)
 				g.InvalidatePathGrid()
@@ -261,10 +264,21 @@ func (g *Game) handleInput(screenMouseX, screenMouseY int) {
 		return
 	}
 
-	// Toggle Build Mode with 'B'
+	// Toggle Build Menu with 'B'
 	if inpututil.IsKeyJustPressed(ebiten.KeyB) {
-		g.isPlacingBuilding = true
+		g.isBuildMenuOpen = !g.isBuildMenuOpen
 		g.isDragging = false
+	}
+
+	// Quick build hotkeys when Build Menu is open: 1: Barracks, 2: Turret, 3: Supply
+	if g.isBuildMenuOpen {
+		if inpututil.IsKeyJustPressed(ebiten.Key1) {
+			g.StartPlacement(BuildingBarracks)
+		} else if inpututil.IsKeyJustPressed(ebiten.Key2) {
+			g.StartPlacement(BuildingTurret)
+		} else if inpututil.IsKeyJustPressed(ebiten.Key3) {
+			g.StartPlacement(BuildingSupply)
+		}
 	}
 
 	// --- Right Click (Issue Commands) ---
@@ -526,4 +540,16 @@ func (g *Game) handleProductionInput() {
 	if inpututil.IsKeyJustPressed(ebiten.KeyO) {
 		g.TrainUnit(g.selectedBuilding, UnitTypeSpecialist)
 	}
+}
+
+// StartPlacement initiates ghost building placement for a specific building type
+func (g *Game) StartPlacement(bType BuildingType) {
+	cfg := GetBuildingConfig(bType)
+	if g.playerResources < cfg.Cost {
+		return
+	}
+	g.placingBuildingType = bType
+	g.isPlacingBuilding = true
+	g.isBuildMenuOpen = false
+	g.isDragging = false
 }

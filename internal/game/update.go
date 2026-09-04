@@ -14,6 +14,9 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 		if unit.attackTimer > 0 {
 			unit.attackTimer -= dt
 		}
+		if unit.shootAnimTimer > 0 {
+			unit.shootAnimTimer -= dt
+		}
 
 		// Helper: Checks if a future position causes collision
 		isCollidingAt := func(u *Unit, nextX, nextY float64) bool {
@@ -138,7 +141,28 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 		switch unit.state {
 
 		case StateIdle:
-			// Do nothing
+			// Combat units auto-acquire targets within guard range
+			if unit.attackDamage > 0 {
+				guardRange := unit.attackRange + 40.0
+				var closestEnemy *Unit
+				minDist := guardRange
+				for _, enemy := range enemies {
+					if enemy.health <= 0 {
+						continue
+					}
+					d := distance(unit.x, unit.y, enemy.x, enemy.y)
+					if d < minDist {
+						minDist = d
+						closestEnemy = enemy
+					}
+				}
+				if closestEnemy != nil {
+					unit.state = StateAttacking
+					unit.targetEnemy = closestEnemy
+					unit.path = nil
+					unit.stuckFrames = 0
+				}
+			}
 
 		case StateMoving:
 			dist := distance(unit.x, unit.y, unit.targetX, unit.targetY)
@@ -343,8 +367,18 @@ func (g *Game) updateUnits(units, enemies []*Unit) {
 			if dist <= unit.attackRange {
 				unit.path = nil
 				unit.stuckFrames = 0
+
+				// Aim at target center
+				dx := (unit.targetEnemy.x + unitSize/2.0) - (unit.x + unitSize/2.0)
+				dy := (unit.targetEnemy.y + unitSize/2.0) - (unit.y + unitSize/2.0)
+				d := math.Hypot(dx, dy)
+				if d > 0 {
+					unit.aimDirX = dx / d
+					unit.aimDirY = dy / d
+				}
+
 				if unit.attackTimer <= 0 {
-					unit.targetEnemy.health -= unit.attackDamage
+					g.FireUnitWeapon(unit, unit.targetEnemy)
 					unit.attackTimer = 1.0 / unit.attackSpeed
 				}
 			} else {
@@ -366,6 +400,8 @@ func (g *Game) cleanupDeadUnits() {
 	for _, unit := range g.units {
 		if unit.health > 0 {
 			livingPlayerUnits = append(livingPlayerUnits, unit)
+		} else {
+			g.SpawnUnitDestruction(unit.x+unitSize/2.0, unit.y+unitSize/2.0, unit.team)
 		}
 	}
 	g.units = livingPlayerUnits
@@ -374,6 +410,8 @@ func (g *Game) cleanupDeadUnits() {
 	for _, unit := range g.enemyUnits {
 		if unit.health > 0 {
 			livingEnemyUnits = append(livingEnemyUnits, unit)
+		} else {
+			g.SpawnUnitDestruction(unit.x+unitSize/2.0, unit.y+unitSize/2.0, unit.team)
 		}
 	}
 	g.enemyUnits = livingEnemyUnits
@@ -430,6 +468,64 @@ func (g *Game) updateBuildings() {
 			continue // Building is under construction
 		}
 
+		// 1. Turret Automated Defense
+		if b.buildingType == BuildingTurret {
+			if b.attackTimer > 0 {
+				b.attackTimer -= dt
+			}
+			if b.shootAnimTimer > 0 {
+				b.shootAnimTimer -= dt
+			}
+
+			var potentialTargets []*Unit
+			if b.team == 1 {
+				potentialTargets = g.enemyUnits
+			} else {
+				potentialTargets = g.units
+			}
+
+			bCenterX := b.x + b.width/2.0
+			bCenterY := b.y + b.height/2.0
+			var closestTarget *Unit
+			minDist := b.attackRange
+
+			for _, target := range potentialTargets {
+				if target.health <= 0 {
+					continue
+				}
+				d := distance(bCenterX, bCenterY, target.x+unitSize/2.0, target.y+unitSize/2.0)
+				if d < minDist {
+					minDist = d
+					closestTarget = target
+				}
+			}
+
+			if closestTarget != nil {
+				dx := (closestTarget.x + unitSize/2.0) - bCenterX
+				dy := (closestTarget.y + unitSize/2.0) - bCenterY
+				d := math.Hypot(dx, dy)
+				if d > 0 {
+					b.turretAimX = dx / d
+					b.turretAimY = dy / d
+				}
+
+				if b.attackTimer <= 0 {
+					g.FireTurretWeapon(b, closestTarget)
+					b.attackTimer = 1.0 / b.attackSpeed
+				}
+			}
+		}
+
+		// 2. Supply Depot Passive Gold Generation
+		if b.buildingType == BuildingSupply && b.team == 1 {
+			b.supplyTimer += dt
+			if b.supplyTimer >= 4.0 { // +10 gold every 4 seconds
+				g.playerResources += 10
+				b.supplyTimer = 0
+			}
+		}
+
+		// 3. Unit Production
 		if b.isBuilding {
 			buildTime := b.productionTime
 			if buildTime <= 0 {

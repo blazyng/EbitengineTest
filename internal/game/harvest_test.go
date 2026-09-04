@@ -16,6 +16,7 @@ func TestHarvestAndReturn(t *testing.T) {
 		NewUnit(50, 50, 1),
 		NewUnit(80, 80, 1),
 	}
+	g.enemyUnits = nil
 	g.resourceNodes = []*ResourceNode{
 		NewResourceNode(200, 200, 100),
 	}

@@ -190,6 +190,68 @@ func (g *Game) getCommandButtons() []UIButton {
 		return buttons
 	}
 
+	// State 1.5: In Build Menu (Choosing structure to place)
+	if g.isBuildMenuOpen {
+		barracksCfg := GetBuildingConfig(BuildingBarracks)
+		turretCfg := GetBuildingConfig(BuildingTurret)
+		supplyCfg := GetBuildingConfig(BuildingSupply)
+
+		// Row 1: Barracks & Turret
+		buttons = append(buttons, UIButton{
+			X:        220,
+			Y:        193,
+			W:        46,
+			H:        21,
+			Label:    "Barracks",
+			Subtext:  fmt.Sprintf("%dg [1]", barracksCfg.Cost),
+			Disabled: g.playerResources < barracksCfg.Cost,
+			Action: func() {
+				g.StartPlacement(BuildingBarracks)
+			},
+		})
+
+		buttons = append(buttons, UIButton{
+			X:        270,
+			Y:        193,
+			W:        46,
+			H:        21,
+			Label:    "Turret",
+			Subtext:  fmt.Sprintf("%dg [2]", turretCfg.Cost),
+			Disabled: g.playerResources < turretCfg.Cost,
+			Action: func() {
+				g.StartPlacement(BuildingTurret)
+			},
+		})
+
+		// Row 2: Supply & Back
+		buttons = append(buttons, UIButton{
+			X:        220,
+			Y:        216,
+			W:        46,
+			H:        21,
+			Label:    "Supply",
+			Subtext:  fmt.Sprintf("%dg [3]", supplyCfg.Cost),
+			Disabled: g.playerResources < supplyCfg.Cost,
+			Action: func() {
+				g.StartPlacement(BuildingSupply)
+			},
+		})
+
+		buttons = append(buttons, UIButton{
+			X:       270,
+			Y:       216,
+			W:       46,
+			H:       21,
+			Label:   "Back",
+			Subtext: "Esc",
+			Danger:  true,
+			Action: func() {
+				g.isBuildMenuOpen = false
+			},
+		})
+		return buttons
+	}
+
 	// State 2: Building is Selected
 	if g.selectedBuilding != nil {
 		fac := g.selectedBuilding.faction
@@ -260,17 +322,17 @@ func (g *Game) getCommandButtons() []UIButton {
 	// State 3: Unit(s) Selected
 	selectedUnits := g.getSelectedUnits()
 	if len(selectedUnits) > 0 {
-		canBuild := g.playerResources >= 100
+		canBuild := g.playerResources >= 75
 		buttons = append(buttons, UIButton{
 			X:        220,
 			Y:        193,
 			W:        46,
 			H:        22,
 			Label:    "Build",
-			Subtext:  "100g",
+			Subtext:  "[B]",
 			Disabled: !canBuild,
 			Action: func() {
-				g.isPlacingBuilding = true
+				g.isBuildMenuOpen = true
 				g.isDragging = false
 			},
 		})
@@ -290,17 +352,17 @@ func (g *Game) getCommandButtons() []UIButton {
 	}
 
 	// State 4: Default (No selection)
-	canBuild := g.playerResources >= 100
+	canBuild := g.playerResources >= 75
 	buttons = append(buttons, UIButton{
 		X:        220,
 		Y:        193,
 		W:        46,
 		H:        22,
 		Label:    "Build",
-		Subtext:  "100g",
+		Subtext:  "[B]",
 		Disabled: !canBuild,
 		Action: func() {
-			g.isPlacingBuilding = true
+			g.isBuildMenuOpen = true
 			g.isDragging = false
 		},
 	})
@@ -457,7 +519,8 @@ func (g *Game) drawSelectionInfo(screen *ebiten.Image) {
 		vector.StrokeRect(screen, iconX, iconY, 24, 24, 1, color.RGBA{0, 255, 0, 255}, false)
 
 		facInfo := GetFactionInfo(b.faction)
-		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("[%s] HQ", facInfo.Name), 86, 194)
+		bCfg := GetBuildingConfig(b.buildingType)
+		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("[%s] %s", facInfo.Name, bCfg.Name), 86, 194)
 
 		if b.buildProgress < 1.0 {
 			progPercent := float32(b.buildProgress)
@@ -472,6 +535,12 @@ func (g *Game) drawSelectionInfo(screen *ebiten.Image) {
 			vector.DrawFilledRect(screen, 86, 207, barW, 5, color.RGBA{60, 60, 60, 255}, false)
 			vector.DrawFilledRect(screen, 86, 207, barW*progPercent, 5, color.RGBA{0, 255, 100, 255}, false)
 			ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Train %s %d%%", prodCfg.Name, int(progPercent*100)), 86, 217)
+		} else if b.buildingType == BuildingTurret {
+			ebitenutil.DebugPrintAt(screen, fmt.Sprintf("HP:%d/%d Dmg:%d", b.health, b.maxHealth, b.attackDamage), 86, 207)
+			ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Rng:%.0f Auto-Defense", b.attackRange), 86, 218)
+		} else if b.buildingType == BuildingSupply {
+			ebitenutil.DebugPrintAt(screen, fmt.Sprintf("HP:%d/%d Storage", b.health, b.maxHealth), 86, 207)
+			ebitenutil.DebugPrintAt(screen, "Income: +10g / 4s", 86, 218)
 		} else {
 			ebitenutil.DebugPrintAt(screen, "Status: Ready", 86, 207)
 			ebitenutil.DebugPrintAt(screen, "Train: [U] [I] [O]", 86, 218)
