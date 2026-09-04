@@ -28,14 +28,14 @@ This phase built the minimum viable product (MVP) with all fundamental RTS mecha
 
 This phase focuses on upgrading the core systems from "functional" to "fun" and implementing proper game mechanics.
 
-* `[ ]` **Basic UI/HUD:** Implement a simple UI panel to display selected unit info and a command bar (e.g., "Build", "Attack" buttons).
-* `[ ]` **Worker-Based Building:**
-    * `[ ]` Allow workers (current unit) to be commanded to build structures.
-    * `[ ]` Implement a building-placement mode (show a "ghost" building on the cursor).
-    * `[ ]` Create new unit states (`StateMovingToBuild`, `StateBuilding`).
-* `[ ]` **Tiled Map System:** Replace the black void with a proper 2D map rendered from a tilemap (e.g., using `tmx` files from the Tiled editor).
-* `[ ]` **Basic Pathfinding:** Upgrade from simple collision-stop to a basic A\* (A-Star) algorithm so units can navigate *around* obstacles.
-* `[ ]` **Camera Controls:** Implement basic camera scrolling (e.g., with arrow keys or mouse-at-edge).
+* `[x]` **Basic UI/HUD:** Interactive bottom HUD panel, top resource bar, tactical minimap with viewport & jump/move navigation, selection inspector (units & buildings), and clickable command buttons.
+* `[x]` **Worker-Based Building:**
+    * `[x]` Allow workers (current unit) to be commanded to build structures.
+    * `[x]` Implement a building-placement mode (show a "ghost" building on the cursor).
+    * `[x]` Create new unit states (`StateMovingToBuild`, `StateBuilding`).
+* `[ ]` **Tiled Map System:** Replace the simple tiled texture with a multi-layered tilemap (e.g., using `tmx` files or varied terrain like water/cliffs).
+* `[x]` **A* Pathfinding:** Robust 8-directional A* grid with C-space obstacle inflation, line-of-sight raycasting smoothing, visual waypoint lines for selected units, and multi-unit formation movement.
+* `[x]` **Camera Controls:** Implement camera scrolling (WASD, arrow keys, and mouse edge-scrolling) clamped to map boundaries.
 
 ---
 
@@ -43,8 +43,8 @@ This phase focuses on upgrading the core systems from "functional" to "fun" and 
 
 Once the core loop is solid, this phase will introduce variety and audiovisual feedback.
 
-* `[ ]` **Faction System:** Implement a structure for multiple factions (USA, GBA, EU, China, Anime, etc.).
-* `[ ]` **Unique Units & Buildings:** Create the first two distinct factions with unique units and structures.
+* `[x]` **Faction System:** Implement a structure for multiple factions (USA, China, GBA, EU, Anime, etc.) based on `factions.md`.
+* `[x]` **Unique Units & Roles:** Distinct unit classes (Workers, Infantry, Anti-Armor Specialists) with unique stats, roles (harvesting vs combat), training times, and faction visual badges.
 * `[ ]` **Sprite & Animation System:** Replace the colored squares with actual 2D sprites.
     * `[ ]` Implement sprite sheets for animations (e.g., walking, attacking, harvesting).
 * `[ ]` **Audio System:** Implement basic sound effects (clicks, attacks, "unit ready") and background music.
@@ -104,6 +104,23 @@ These are just funny ideas.
     go run ./
     ```
     *(Note: `go run ./` is often more reliable than `go run main.go` in projects with multiple packages)*
+
+---
+
+## Controls
+
+* **Camera Movement:** `W`, `A`, `S`, `D` or Arrow keys, or moving cursor to screen edges.
+* **Camera Zoom:** Mouse Wheel (zooms into/out of cursor position), `+` / `-` (`PageUp` / `PageDown`), `0` or `Home` (resets to 1.0x).
+* **Window & Fullscreen:** Resize window freely by dragging edges or maximizing; toggle fullscreen with `F11`.
+* **Selection:** Left-click on units/buildings or drag-box to select multiple units. `Esc` clears selection.
+* **Orders:** Right-click to move, attack enemies, harvest resources (workers only), or build (workers only).
+* **Minimap:** Left-click/drag minimap to jump camera; Right-click minimap to issue move orders to selected units.
+* **Commands:**
+  * `B` or HUD Button `[Build]`: Enter building placement mode (`Esc` to cancel).
+  * `S` or HUD Button `[Stop]`: Stop selected units immediately.
+  * `U`: Train Worker (`M.U.L.E. Drone` / `Construction Dozer`).
+  * `I`: Train Infantry (`Marine` / `Conscript`).
+  * `O`: Train Anti-Armor Specialist (`Javelin Soldier` / `Tank Buster`).
 
 ---
 
